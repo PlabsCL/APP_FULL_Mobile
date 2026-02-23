@@ -1,17 +1,10 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text } from 'react-native';
 import { colors } from '../constants/colors';
+import HomeScreen from '../screens/HomeScreen';
 
 const Stack = createStackNavigator();
-
-// Temporary placeholder component - replace with actual screens
-const PlaceholderScreen = () => (
-  <View style={{ flex: 1, backgroundColor: colors.background }}>
-    <Text style={{ color: colors.text }}>Ready for screens</Text>
-  </View>
-);
 
 export default function AppNavigator() {
   return (
@@ -30,10 +23,9 @@ export default function AppNavigator() {
           },
         }}
       >
-        {/* Replace PlaceholderScreen with actual screens as needed */}
         <Stack.Screen
-          name="Placeholder"
-          component={PlaceholderScreen}
+          name="Home"
+          component={HomeScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
