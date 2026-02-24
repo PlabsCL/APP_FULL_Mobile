@@ -2,15 +2,22 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   ScrollView,
   Animated,
   PanResponder,
+  Modal,
+  StyleSheet,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Location from 'expo-location';
+import MapView, { Marker } from 'react-native-maps';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
 import DrawerMenu from '../components/DrawerMenu';
@@ -26,6 +33,8 @@ interface PedidoConEstado {
   horario: string;
   estado: EstadoPedido;
   sincronizado: boolean;
+  lat: number;
+  lng: number;
 }
 
 interface Props {
@@ -49,42 +58,50 @@ const ESTADO_LABEL: Record<string, string> = {
 
 // ─── Datos mock ───────────────────────────────────────────────────────────────
 const INIT_FINALIZADOS: PedidoConEstado[] = [
-  { key: 'f1', codigo: 'PR24', cliente: 'MARIA TERESA CACERES GONZALEZ', direccion: 'LOS CIPRESES 3422, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'entregado',  sincronizado: true  },
-  { key: 'f2', codigo: 'PR30', cliente: 'DANIEL ANTONIO MOYA ALVARADO',  direccion: 'EL TAMARINDO 2505, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'rechazado',  sincronizado: true  },
-  { key: 'f3', codigo: 'PR29', cliente: 'GLORIA ANDREA GAETE CERDA',     direccion: 'PASAJE EL BALCON 3332, PUENTE ALTO', horario: '08:00 - 21:00', estado: 'postergado', sincronizado: false },
+  { key: 'f1', codigo: 'PR24', cliente: 'MARIA TERESA CACERES GONZALEZ', direccion: 'LOS CIPRESES 3422, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'entregado',  sincronizado: true,  lat: -33.6089, lng: -70.5742 },
+  { key: 'f2', codigo: 'PR30', cliente: 'DANIEL ANTONIO MOYA ALVARADO',  direccion: 'EL TAMARINDO 2505, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'rechazado',  sincronizado: true,  lat: -33.6073, lng: -70.5789 },
+  { key: 'f3', codigo: 'PR29', cliente: 'GLORIA ANDREA GAETE CERDA',     direccion: 'PASAJE EL BALCON 3332, PUENTE ALTO', horario: '08:00 - 21:00', estado: 'postergado', sincronizado: false, lat: -33.6102, lng: -70.5701 },
 ];
 
 const INIT_PENDIENTES: PedidoConEstado[] = [
-  { key: 'p4',  codigo: 'PR25', cliente: 'HERNAN DAVID SOTO SARAVIA',            direccion: 'PASAJE JORGE ORREGO SALAS 742, PUENTE ALTO', horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p5',  codigo: 'PR23', cliente: 'CRISTOPHER ALEJANDRO APARICIO MEDINA', direccion: 'TOCOPMAL 60, PUENTE ALTO',                    horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p6',  codigo: 'PR31', cliente: 'ROSA ELENA FUENTES VALDIVIA',          direccion: 'AV. CONCHA Y TORO 1520, PUENTE ALTO',         horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p7',  codigo: 'PR18', cliente: 'JUAN CARLOS MENDEZ ROJAS',             direccion: 'CALLE LAS ROSAS 890, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p8',  codigo: 'PR27', cliente: 'CLAUDIA BEATRIZ SILVA PARRA',          direccion: 'PASAJE LOS PINOS 234, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p9',  codigo: 'PR15', cliente: 'ROBERTO ANTONIO DIAZ LEON',            direccion: 'SAN CARLOS DE APOQUINDO 4680, PUENTE ALTO',   horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p10', codigo: 'PR33', cliente: 'ANA MARIA TORRES ESPINOZA',            direccion: 'LO ESPEJO 3101, PUENTE ALTO',                 horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p11', codigo: 'PR12', cliente: 'PABLO ANDRES VERA CONTRERAS',          direccion: 'EYZAGUIRRE 502, PUENTE ALTO',                 horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p12', codigo: 'PR36', cliente: 'VALENTINA PAZ MORALES REYES',          direccion: 'ORIENTE 680, PUENTE ALTO',                    horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p13', codigo: 'PR09', cliente: 'SERGIO IGNACIO CAMPOS NUÑEZ',          direccion: 'AV. GABRIELA PONIENTE 4400, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p14', codigo: 'PR22', cliente: 'CAROLINA ANDREA HERRERA RIOS',         direccion: 'PASAJE LAS LILAS 118, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p15', codigo: 'PR40', cliente: 'FRANCISCO JAVIER PEREZ VEGA',          direccion: 'PEDRO DE VALDIVIA 2230, PUENTE ALTO',         horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p16', codigo: 'PR07', cliente: 'MARCELA ANDREA CASTRO IBAÑEZ',         direccion: 'CALLE LOS AROMOS 754, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p17', codigo: 'PR28', cliente: 'NICOLAS ALEJANDRO FLORES ARAYA',       direccion: 'PASAJE EL SAUCE 321, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p18', codigo: 'PR11', cliente: 'ELIZABETH CAROLINA ROJAS MUNOZ',       direccion: 'LOS QUILLAYES 980, PUENTE ALTO',              horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p19', codigo: 'PR35', cliente: 'ANDRES FELIPE NAVARRO ORTIZ',          direccion: 'PASAJE JAZMINES 455, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p20', codigo: 'PR16', cliente: 'MARIELA FRANCISCA ACOSTA PEÑA',        direccion: 'CALLE COIHUECO 1234, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p21', codigo: 'PR42', cliente: 'JORGE ENRIQUE GUTIERREZ TAPIA',        direccion: 'AV. PRINCIPAL 3300, PUENTE ALTO',             horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p22', codigo: 'PR05', cliente: 'LORENA BEATRIZ SANCHEZ MEDINA',        direccion: 'PASAJE LOS COPIHUES 67, PUENTE ALTO',         horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p23', codigo: 'PR38', cliente: 'DIEGO MATIAS REYES BRAVO',             direccion: 'LAS VIOLETAS 1890, PUENTE ALTO',              horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p24', codigo: 'PR20', cliente: 'NATALIA IGNACIA ROMERO SOTO',          direccion: 'CALLE EL LITRE 720, PUENTE ALTO',             horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p25', codigo: 'PR44', cliente: 'GUSTAVO ADOLFO MOLINA RIOS',           direccion: 'PASAJE LOS CEDROS 88, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p26', codigo: 'PR03', cliente: 'PATRICIA ELENA VARGAS LAGOS',          direccion: 'AV. CAMILO HENRIQUEZ 5500, PUENTE ALTO',      horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p27', codigo: 'PR32', cliente: 'OSCAR MAURICIO LEON FERNANDEZ',        direccion: 'CALLE LAS ENCINAS 430, PUENTE ALTO',          horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p28', codigo: 'PR14', cliente: 'VIVIANA ALEJANDRA BUSTOS ALARCON',     direccion: 'PASAJE LOS ALAMOS 111, PUENTE ALTO',          horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p29', codigo: 'PR45', cliente: 'HECTOR RODRIGO PIZARRO VILLALOBOS',    direccion: 'LAS PALMAS 2780, PUENTE ALTO',                horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
-  { key: 'p30', codigo: 'PR01', cliente: 'BEATRIZ SOLEDAD MUÑOZ CONTRERAS',      direccion: 'CALLE SECTOR C 340, PUENTE ALTO',             horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true },
+  { key: 'p4',  codigo: 'PR25', cliente: 'HERNAN DAVID SOTO SARAVIA',            direccion: 'PASAJE JORGE ORREGO SALAS 742, PUENTE ALTO', horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6135, lng: -70.5768 },
+  { key: 'p5',  codigo: 'PR23', cliente: 'CRISTOPHER ALEJANDRO APARICIO MEDINA', direccion: 'TOCOPMAL 60, PUENTE ALTO',                    horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6058, lng: -70.5756 },
+  { key: 'p6',  codigo: 'PR31', cliente: 'ROSA ELENA FUENTES VALDIVIA',          direccion: 'AV. CONCHA Y TORO 1520, PUENTE ALTO',         horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6094, lng: -70.5712 },
+  { key: 'p7',  codigo: 'PR18', cliente: 'JUAN CARLOS MENDEZ ROJAS',             direccion: 'CALLE LAS ROSAS 890, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6120, lng: -70.5791 },
+  { key: 'p8',  codigo: 'PR27', cliente: 'CLAUDIA BEATRIZ SILVA PARRA',          direccion: 'PASAJE LOS PINOS 234, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6065, lng: -70.5728 },
+  { key: 'p9',  codigo: 'PR15', cliente: 'ROBERTO ANTONIO DIAZ LEON',            direccion: 'SAN CARLOS DE APOQUINDO 4680, PUENTE ALTO',   horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6110, lng: -70.5742 },
+  { key: 'p10', codigo: 'PR33', cliente: 'ANA MARIA TORRES ESPINOZA',            direccion: 'LO ESPEJO 3101, PUENTE ALTO',                 horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6087, lng: -70.5770 },
+  { key: 'p11', codigo: 'PR12', cliente: 'PABLO ANDRES VERA CONTRERAS',          direccion: 'EYZAGUIRRE 502, PUENTE ALTO',                 horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6078, lng: -70.5798 },
+  { key: 'p12', codigo: 'PR36', cliente: 'VALENTINA PAZ MORALES REYES',          direccion: 'ORIENTE 680, PUENTE ALTO',                    horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6130, lng: -70.5725 },
+  { key: 'p13', codigo: 'PR09', cliente: 'SERGIO IGNACIO CAMPOS NUÑEZ',          direccion: 'AV. GABRIELA PONIENTE 4400, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6055, lng: -70.5762 },
+  { key: 'p14', codigo: 'PR22', cliente: 'CAROLINA ANDREA HERRERA RIOS',         direccion: 'PASAJE LAS LILAS 118, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6098, lng: -70.5784 },
+  { key: 'p15', codigo: 'PR40', cliente: 'FRANCISCO JAVIER PEREZ VEGA',          direccion: 'PEDRO DE VALDIVIA 2230, PUENTE ALTO',         horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6115, lng: -70.5752 },
+  { key: 'p16', codigo: 'PR07', cliente: 'MARCELA ANDREA CASTRO IBAÑEZ',         direccion: 'CALLE LOS AROMOS 754, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6072, lng: -70.5715 },
+  { key: 'p17', codigo: 'PR28', cliente: 'NICOLAS ALEJANDRO FLORES ARAYA',       direccion: 'PASAJE EL SAUCE 321, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6142, lng: -70.5778 },
+  { key: 'p18', codigo: 'PR11', cliente: 'ELIZABETH CAROLINA ROJAS MUNOZ',       direccion: 'LOS QUILLAYES 980, PUENTE ALTO',              horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6063, lng: -70.5745 },
+  { key: 'p19', codigo: 'PR35', cliente: 'ANDRES FELIPE NAVARRO ORTIZ',          direccion: 'PASAJE JAZMINES 455, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6099, lng: -70.5731 },
+  { key: 'p20', codigo: 'PR16', cliente: 'MARIELA FRANCISCA ACOSTA PEÑA',        direccion: 'CALLE COIHUECO 1234, PUENTE ALTO',            horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6085, lng: -70.5799 },
+  { key: 'p21', codigo: 'PR42', cliente: 'JORGE ENRIQUE GUTIERREZ TAPIA',        direccion: 'AV. PRINCIPAL 3300, PUENTE ALTO',             horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6127, lng: -70.5763 },
+  { key: 'p22', codigo: 'PR05', cliente: 'LORENA BEATRIZ SANCHEZ MEDINA',        direccion: 'PASAJE LOS COPIHUES 67, PUENTE ALTO',         horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6047, lng: -70.5751 },
+  { key: 'p23', codigo: 'PR38', cliente: 'DIEGO MATIAS REYES BRAVO',             direccion: 'LAS VIOLETAS 1890, PUENTE ALTO',              horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6108, lng: -70.5718 },
+  { key: 'p24', codigo: 'PR20', cliente: 'NATALIA IGNACIA ROMERO SOTO',          direccion: 'CALLE EL LITRE 720, PUENTE ALTO',             horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6091, lng: -70.5779 },
+  { key: 'p25', codigo: 'PR44', cliente: 'GUSTAVO ADOLFO MOLINA RIOS',           direccion: 'PASAJE LOS CEDROS 88, PUENTE ALTO',           horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6070, lng: -70.5735 },
+  { key: 'p26', codigo: 'PR03', cliente: 'PATRICIA ELENA VARGAS LAGOS',          direccion: 'AV. CAMILO HENRIQUEZ 5500, PUENTE ALTO',      horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6118, lng: -70.5796 },
+  { key: 'p27', codigo: 'PR32', cliente: 'OSCAR MAURICIO LEON FERNANDEZ',        direccion: 'CALLE LAS ENCINAS 430, PUENTE ALTO',          horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6052, lng: -70.5769 },
+  { key: 'p28', codigo: 'PR14', cliente: 'VIVIANA ALEJANDRA BUSTOS ALARCON',     direccion: 'PASAJE LOS ALAMOS 111, PUENTE ALTO',          horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6080, lng: -70.5744 },
+  { key: 'p29', codigo: 'PR45', cliente: 'HECTOR RODRIGO PIZARRO VILLALOBOS',    direccion: 'LAS PALMAS 2780, PUENTE ALTO',                horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6103, lng: -70.5758 },
+  { key: 'p30', codigo: 'PR01', cliente: 'BEATRIZ SOLEDAD MUÑOZ CONTRERAS',      direccion: 'CALLE SECTOR C 340, PUENTE ALTO',             horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6068, lng: -70.5782 },
 ];
 
 const ITEM_HEIGHT = 96;
+
+// Región inicial del mapa (centro de Puente Alto)
+const MAP_REGION = {
+  latitude: -33.6094,
+  longitude: -70.5751,
+  latitudeDelta: 0.025,
+  longitudeDelta: 0.025,
+};
 
 // ─── Handle de arrastre ───────────────────────────────────────────────────────
 function DragHandle({ index, isActive, onStart, onMove, onEnd }: {
@@ -147,6 +164,20 @@ export default function EntregasScreen({ navigation }: Props) {
   const finalizados = INIT_FINALIZADOS;
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // ── Búsqueda ─────────────────────────────────────────────────────────────────
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // ── Mapa ─────────────────────────────────────────────────────────────────────
+  const [mapVisible, setMapVisible] = useState(false);
+  const [selectedPedido, setSelectedPedido] = useState<PedidoConEstado | null>(null);
+  const mapRef = useRef<MapView>(null);
+
+  // ── Cámara / Escáner ─────────────────────────────────────────────────────────
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const scannedRef = useRef(false);
+
   // ── Drag state ───────────────────────────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(-1);
   const [hoverIndex,  setHoverIndex]  = useState(-1);
@@ -183,7 +214,76 @@ export default function EntregasScreen({ navigation }: Props) {
     dragY.setValue(0);
   }, [dragY]);
 
-  const listaActiva = tabActiva === 'enruta' ? pendientes : finalizados;
+  // ── Centrar en ubicación actual ──────────────────────────────────────────────
+  const handleLocateMe = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para centrar el mapa.');
+      return;
+    }
+    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    mapRef.current?.animateToRegion({
+      latitude: loc.coords.latitude,
+      longitude: loc.coords.longitude,
+      latitudeDelta: 0.012,
+      longitudeDelta: 0.012,
+    }, 500);
+  };
+
+  // ── Lista activa con filtro ───────────────────────────────────────────────────
+  const listaBase = tabActiva === 'enruta' ? pendientes : finalizados;
+  const listaActiva = searchQuery.trim()
+    ? listaBase.filter(p => p.codigo.toLowerCase().includes(searchQuery.toLowerCase()))
+    : listaBase;
+
+  // ── Abrir cámara ─────────────────────────────────────────────────────────────
+  const handleOpenCamera = async () => {
+    if (!permission?.granted) {
+      Alert.alert(
+        'Acceso a la cámara',
+        'Se necesita acceso a la cámara para escanear el código de barras del pedido físico.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Permitir',
+            onPress: async () => {
+              const result = await requestPermission();
+              if (!result.granted) {
+                Alert.alert(
+                  'Permiso denegado',
+                  'Sin acceso a la cámara no es posible escanear códigos de barras. Puedes activarlo desde los ajustes del teléfono.'
+                );
+                return;
+              }
+              scannedRef.current = false;
+              setCameraVisible(true);
+            },
+          },
+        ]
+      );
+      return;
+    }
+    scannedRef.current = false;
+    setCameraVisible(true);
+  };
+
+  const handleBarcodeScanned = ({ data }: { data: string }) => {
+    if (scannedRef.current) return;
+    scannedRef.current = true;
+    setCameraVisible(false);
+    setSearchQuery(data);
+    setSearchVisible(true);
+  };
+
+  // ── Toggle búsqueda ──────────────────────────────────────────────────────────
+  const handleToggleSearch = () => {
+    if (searchVisible) {
+      setSearchVisible(false);
+      setSearchQuery('');
+    } else {
+      setSearchVisible(true);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }} edges={['top']}>
@@ -211,20 +311,90 @@ export default function EntregasScreen({ navigation }: Props) {
 
         {/* Iconos de acción */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="search-outline" size={22} color={colors.text} />
+          {/* Lupa */}
+          <TouchableOpacity
+            onPress={handleToggleSearch}
+            style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <Ionicons
+              name={searchVisible ? 'search' : 'search-outline'}
+              size={22}
+              color={searchVisible ? colors.warning : colors.text}
+            />
           </TouchableOpacity>
+
+          {/* Actualizar */}
           <TouchableOpacity style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
             <Ionicons name="refresh-outline" size={22} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
+
+          {/* Mapa */}
+          <TouchableOpacity
+            onPress={() => setMapVisible(true)}
+            style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+          >
             <Ionicons name="map-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* ── Barra de búsqueda ───────────────────────────────────────────────── */}
+      {searchVisible && (
+        <View style={{
+          backgroundColor: '#FFFFFF',
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: '#E5E7EB',
+        }}>
+          {/* Ícono de cámara */}
+          <TouchableOpacity
+            onPress={handleOpenCamera}
+            style={{ padding: 6, marginRight: 8 }}
+          >
+            <Ionicons name="camera-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
+
+          {/* Campo de texto */}
+          <TextInput
+            style={{
+              flex: 1,
+              fontSize: 15,
+              color: '#1F2937',
+              paddingVertical: 6,
+              paddingHorizontal: 4,
+            }}
+            placeholder="Buscar ID de pedido..."
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+            autoCapitalize="characters"
+            returnKeyType="search"
+          />
+
+          {/* Limpiar */}
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 6 }}>
+              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* ── Lista ───────────────────────────────────────────────────────────── */}
       <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} scrollEnabled={scrollEnabled}>
+        {listaActiva.length === 0 && (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+            <Text style={{ color: '#9CA3AF', marginTop: 12, fontSize: 14 }}>
+              Sin resultados para "{searchQuery}"
+            </Text>
+          </View>
+        )}
+
         {listaActiva.map((item, index) => {
           const isActive = tabActiva === 'enruta' && activeIndex === index;
           const isHover  = tabActiva === 'enruta' && hoverIndex === index && !isActive;
@@ -324,7 +494,6 @@ export default function EntregasScreen({ navigation }: Props) {
         borderTopColor: '#374151',
         paddingBottom: insets.bottom || 8,
       }}>
-        {/* Tab: En Ruta */}
         <TouchableOpacity
           onPress={() => setTabActiva('enruta')}
           style={{ flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}
@@ -342,10 +511,8 @@ export default function EntregasScreen({ navigation }: Props) {
           </Text>
         </TouchableOpacity>
 
-        {/* Divisor */}
         <View style={{ width: 1, backgroundColor: '#374151', marginVertical: 8 }} />
 
-        {/* Tab: Finalizados */}
         <TouchableOpacity
           onPress={() => setTabActiva('finalizados')}
           style={{ flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}
@@ -364,6 +531,236 @@ export default function EntregasScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
+      {/* ── Modal: Mapa ─────────────────────────────────────────────────────── */}
+      <Modal
+        visible={mapVisible}
+        animationType="slide"
+        onRequestClose={() => { setMapVisible(false); setSelectedPedido(null); }}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }} edges={['top']}>
+          {/* Header del mapa */}
+          <View style={{
+            backgroundColor: colors.primary,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+          }}>
+            <TouchableOpacity
+              onPress={() => { setMapVisible(false); setSelectedPedido(null); }}
+              style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={{
+              flex: 1,
+              fontSize: 17,
+              fontWeight: '600',
+              color: colors.text,
+              marginLeft: 8,
+            }}>
+              Puntos en Ruta ({pendientes.length})
+            </Text>
+          </View>
+
+          {/* Contenedor mapa + controles */}
+          <View style={{ flex: 1 }}>
+            <MapView
+              ref={mapRef}
+              style={{ flex: 1 }}
+              initialRegion={MAP_REGION}
+              showsUserLocation
+              onPress={() => setSelectedPedido(null)}
+            >
+              {pendientes.map((item) => (
+                <Marker
+                  key={item.key}
+                  coordinate={{ latitude: item.lat, longitude: item.lng }}
+                  onPress={(e) => { e.stopPropagation(); setSelectedPedido(item); }}
+                />
+              ))}
+            </MapView>
+
+            {/* Botón: centrar en ubicación actual */}
+            <TouchableOpacity
+              onPress={handleLocateMe}
+              style={{
+                position: 'absolute',
+                right: 16,
+                bottom: selectedPedido ? 176 : 24,
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: '#FFFFFF',
+                justifyContent: 'center',
+                alignItems: 'center',
+                elevation: 5,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+              }}
+            >
+              <Ionicons name="locate" size={24} color={colors.primary} />
+            </TouchableOpacity>
+
+            {/* Tarjeta info del pedido seleccionado */}
+            {selectedPedido && (
+              <View style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: '#FFFFFF',
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: insets.bottom || 20,
+                elevation: 10,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -3 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+              }}>
+                {/* Línea indicadora */}
+                <View style={{
+                  width: 36, height: 4, borderRadius: 2,
+                  backgroundColor: '#D1D5DB',
+                  alignSelf: 'center',
+                  marginBottom: 14,
+                }} />
+
+                {/* Código + cerrar */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                  <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.warning, flex: 1 }}>
+                    {selectedPedido.codigo}
+                  </Text>
+                  <TouchableOpacity onPress={() => setSelectedPedido(null)} style={{ padding: 4 }}>
+                    <Ionicons name="close" size={22} color="#9CA3AF" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Dirección */}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <Ionicons name="location-outline" size={16} color="#3B82F6" style={{ marginRight: 8, marginTop: 2 }} />
+                  <Text style={{ fontSize: 14, color: '#374151', flex: 1, lineHeight: 20 }}>
+                    {selectedPedido.direccion}
+                  </Text>
+                </View>
+
+                {/* Cliente */}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="person-outline" size={16} color="#6B7280" style={{ marginRight: 8 }} />
+                  <Text style={{ fontSize: 14, color: '#6B7280', flex: 1 }}>
+                    {selectedPedido.cliente}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ── Modal: Cámara / Escáner ──────────────────────────────────────────── */}
+      <Modal
+        visible={cameraVisible}
+        animationType="fade"
+        onRequestClose={() => setCameraVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          <CameraView
+            style={StyleSheet.absoluteFillObject}
+            facing="back"
+            barcodeScannerSettings={{
+              barcodeTypes: ['code128', 'code39', 'ean13', 'ean8', 'qr', 'pdf417'],
+            }}
+            onBarcodeScanned={handleBarcodeScanned}
+          />
+
+          {/* Overlay con marco de escaneo */}
+          <View style={styles.scanOverlay}>
+            {/* Zona superior oscura */}
+            <View style={styles.scanDark} />
+
+            {/* Zona central con marco */}
+            <View style={{ flexDirection: 'row' }}>
+              <View style={styles.scanDarkSide} />
+              <View style={styles.scanFrame}>
+                {/* Esquinas del marco */}
+                <View style={[styles.corner, styles.cornerTL]} />
+                <View style={[styles.corner, styles.cornerTR]} />
+                <View style={[styles.corner, styles.cornerBL]} />
+                <View style={[styles.corner, styles.cornerBR]} />
+              </View>
+              <View style={styles.scanDarkSide} />
+            </View>
+
+            {/* Zona inferior oscura */}
+            <View style={styles.scanDark} />
+          </View>
+
+          {/* Texto + botón cancelar */}
+          <View style={{
+            position: 'absolute',
+            bottom: 60,
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+          }}>
+            <Text style={{ color: '#FFF', fontSize: 14, marginBottom: 24, opacity: 0.85 }}>
+              Apunta al código de barras del pedido
+            </Text>
+            <TouchableOpacity
+              onPress={() => setCameraVisible(false)}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                paddingHorizontal: 32,
+                paddingVertical: 12,
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.4)',
+              }}
+            >
+              <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '600' }}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
+
+// ─── Estilos del escáner ──────────────────────────────────────────────────────
+const FRAME_SIZE = 240;
+
+const styles = StyleSheet.create({
+  scanOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'column',
+  },
+  scanDark: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  scanDarkSide: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  scanFrame: {
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
+  },
+  corner: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderColor: '#FACC15',
+    borderWidth: 3,
+  },
+  cornerTL: { top: 0,    left: 0,    borderRightWidth: 0, borderBottomWidth: 0 },
+  cornerTR: { top: 0,    right: 0,   borderLeftWidth: 0,  borderBottomWidth: 0 },
+  cornerBL: { bottom: 0, left: 0,    borderRightWidth: 0, borderTopWidth: 0    },
+  cornerBR: { bottom: 0, right: 0,   borderLeftWidth: 0,  borderTopWidth: 0    },
+});

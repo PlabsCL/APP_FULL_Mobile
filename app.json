@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "delivery-driver",
+    "name": "Full App",
     "slug": "delivery-driver",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,16 +13,41 @@
       "backgroundColor": "#111827"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Se necesita acceso a la cámara para escanear los códigos de barras de los pedidos.",
+        "NSLocationWhenInUseUsageDescription": "Se necesita tu ubicación para mostrarla en el mapa de entregas."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Se necesita acceso a la cámara para escanear los códigos de barras de los pedidos.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Se necesita tu ubicación para mostrarla en el mapa de entregas."
+        }
+      ]
+    ]
   }
 }
