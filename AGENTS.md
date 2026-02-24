@@ -337,3 +337,4 @@ Antes de ejecutar cualquier tarea, recomendar el modelo adecuado:
 - Mensajes de commit en español
 - Commits atómicos (una funcionalidad por commit)
 - Actualizar este archivo al agregar funcionalidades mayores o cambiar arquitectura
+- **Al hacer commit (haz commit / sube todo / guardalo):** ejecutar `git add`, `git commit`, y `git push` en el mismo paso → local y GitHub quedan sincronizados
