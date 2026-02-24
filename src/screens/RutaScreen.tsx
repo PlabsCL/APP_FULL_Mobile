@@ -129,7 +129,7 @@ function MapRouteIcon() {
 }
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
-export default function RutaScreen({ navigation }: Props) {
+export default function RutaScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const [pedidos, setPedidos] = useState<PedidoEntrega[]>(MOCK_PEDIDOS);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -339,7 +339,10 @@ export default function RutaScreen({ navigation }: Props) {
         {/* Siguiente */}
         <TouchableOpacity
           onPress={() => {
-            // navigation.navigate('SiguientePantalla');
+            navigation.navigate('Confirmar', {
+              ruta: route.params.ruta,
+              totalGuias: pedidos.length,
+            });
           }}
           style={{
             flex: 1,

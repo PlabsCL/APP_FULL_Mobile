@@ -6,6 +6,7 @@ import HomeScreen from '../screens/HomeScreen';
 import RutasDisponiblesScreen, { RootStackParamList } from '../screens/RutasDisponiblesScreen';
 import VehiculosScreen from '../screens/VehiculosScreen';
 import RutaScreen from '../screens/RutaScreen';
+import ConfirmarScreen from '../screens/ConfirmarScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -44,6 +45,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Ruta"
           component={RutaScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Confirmar"
+          component={ConfirmarScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
