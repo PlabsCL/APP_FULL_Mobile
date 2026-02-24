@@ -184,7 +184,7 @@ export default function EntregasScreen({ navigation }: Props) {
   const listaActiva = tabActiva === 'enruta' ? pendientes : finalizados;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }} edges={['top']}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <View style={{
@@ -213,13 +213,13 @@ export default function EntregasScreen({ navigation }: Props) {
             <Ionicons name="refresh-outline" size={22} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+            <Ionicons name="map-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* ── Lista ───────────────────────────────────────────────────────────── */}
-      <ScrollView style={{ flex: 1 }} scrollEnabled={scrollEnabled}>
+      <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} scrollEnabled={scrollEnabled}>
         {listaActiva.map((item, index) => {
           const isActive = tabActiva === 'enruta' && activeIndex === index;
           const isHover  = tabActiva === 'enruta' && hoverIndex === index && !isActive;
