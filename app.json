@@ -28,7 +28,8 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
-      ]
+      ],
+      "enableProguardInReleaseBuilds": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -47,7 +48,8 @@
         {
           "locationWhenInUsePermission": "Se necesita tu ubicación para mostrarla en el mapa de entregas."
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

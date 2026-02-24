@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
+import { navigationRef } from './navigationRef';
 import HomeScreen from '../screens/HomeScreen';
 import RutasDisponiblesScreen, { RootStackParamList } from '../screens/RutasDisponiblesScreen';
 import VehiculosScreen from '../screens/VehiculosScreen';
@@ -15,7 +16,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
