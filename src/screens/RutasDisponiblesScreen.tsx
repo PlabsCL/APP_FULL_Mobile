@@ -19,6 +19,7 @@ export type RootStackParamList = {
   Vehiculos: { ruta: Ruta };
   Ruta: { ruta: Ruta };
   Confirmar: { ruta: Ruta; totalGuias: number };
+  Configuracion: undefined;
 };
 
 type Props = {
