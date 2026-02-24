@@ -20,22 +20,8 @@ import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
+import { EstadoPedido, PedidoConEstado } from '../types/pedido';
 import DrawerMenu from '../components/DrawerMenu';
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-type EstadoPedido = 'pendiente' | 'entregado' | 'rechazado' | 'postergado';
-
-interface PedidoConEstado {
-  key: string;
-  codigo: string;
-  cliente: string;
-  direccion: string;
-  horario: string;
-  estado: EstadoPedido;
-  sincronizado: boolean;
-  lat: number;
-  lng: number;
-}
 
 interface Props {
   navigation: StackNavigationProp<RootStackParamList, 'Entregas'>;
@@ -421,7 +407,11 @@ export default function EntregasScreen({ navigation }: Props) {
               }}
             >
               {/* Contenido */}
-              <View style={{ flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 4 }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 4 }}
+                onPress={() => navigation.navigate('Pedido', { pedido: item })}
+                activeOpacity={0.7}
+              >
 
                 {/* Fila 1: sync + código + badge estado */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
@@ -463,7 +453,7 @@ export default function EntregasScreen({ navigation }: Props) {
                     <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{item.horario}</Text>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
 
               {/* Handle de arrastre (solo pendientes) */}
               {item.estado === 'pendiente' && (

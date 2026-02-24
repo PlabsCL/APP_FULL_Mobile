@@ -10,6 +10,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
 import { Ruta } from '../types/routes';
+import { PedidoConEstado } from '../types/pedido';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   Confirmar: { ruta: Ruta; totalGuias: number };
   Configuracion: undefined;
   Entregas: { ruta: Ruta; totalGuias: number };
+  Pedido: { pedido: PedidoConEstado };
 };
 
 type Props = {

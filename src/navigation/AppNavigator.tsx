@@ -9,6 +9,7 @@ import RutaScreen from '../screens/RutaScreen';
 import ConfirmarScreen from '../screens/ConfirmarScreen';
 import ConfiguracionScreen from '../screens/ConfiguracionScreen';
 import EntregasScreen from '../screens/EntregasScreen';
+import PedidoScreen from '../screens/PedidoScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -62,6 +63,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Entregas"
           component={EntregasScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Pedido"
+          component={PedidoScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
