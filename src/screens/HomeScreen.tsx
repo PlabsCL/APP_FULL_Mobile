@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
@@ -20,13 +21,13 @@ interface HomeScreenProps {
 }
 
 // ─── Drawer item ──────────────────────────────────────────────────────────────
-function DrawerItem({ label, icon, onPress }: { label: string; icon: string; onPress: () => void }) {
+function DrawerItem({ label, iconName, onPress }: { label: string; iconName: React.ComponentProps<typeof Ionicons>['name']; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}
     >
-      <Text style={{ fontSize: 20, marginRight: 16 }}>{icon}</Text>
+      <Ionicons name={iconName} size={20} color="#374151" style={{ marginRight: 16 }} />
       <Text style={{ fontSize: 15, color: '#1F2937', fontWeight: '500' }}>{label}</Text>
     </TouchableOpacity>
   );
@@ -161,13 +162,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
             {/* Ítems del menú */}
             <View style={{ flex: 1, paddingTop: 8 }}>
-              <DrawerItem label="Perfil"         icon="👤" onPress={closeDrawer} />
-              <DrawerItem label="Chat"           icon="💬" onPress={closeDrawer} />
+              <DrawerItem label="Perfil"         iconName="person-outline"     onPress={closeDrawer} />
+              <DrawerItem label="Chat"           iconName="chatbubble-outline"  onPress={closeDrawer} />
 
               <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 8, marginHorizontal: 16 }} />
 
-              <DrawerItem label="Configuración"  icon="⚙️" onPress={() => navigation.navigate('Configuracion')} />
-              <DrawerItem label="Cerrar sesión"  icon="🚪" onPress={closeDrawer} />
+              <DrawerItem label="Configuración"  iconName="settings-outline"   onPress={() => navigation.navigate('Configuracion')} />
+              <DrawerItem label="Cerrar sesión"  iconName="log-out-outline"    onPress={closeDrawer} />
             </View>
           </Animated.View>
         </>

@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -50,7 +51,7 @@ export default function ConfirmarScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={{ minWidth: 48, minHeight: 48, justifyContent: 'center' }}
         >
-          <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>
@@ -73,7 +74,7 @@ export default function ConfirmarScreen({ navigation, route }: Props) {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 52, lineHeight: 60 }}>✓</Text>
+            <Ionicons name="checkmark" size={52} color="#FFFFFF" />
           </View>
         </View>
 

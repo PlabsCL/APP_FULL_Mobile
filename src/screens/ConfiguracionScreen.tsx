@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
@@ -28,7 +29,7 @@ function Checkbox({ value, onToggle }: { value: boolean; onToggle: () => void })
         alignItems: 'center',
       }}>
         {value && (
-          <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', lineHeight: 18 }}>✓</Text>
+          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
         )}
       </View>
     </TouchableOpacity>
@@ -139,7 +140,7 @@ export default function ConfiguracionScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={{ minWidth: 48, minHeight: 48, justifyContent: 'center' }}
         >
-          <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', marginLeft: 4 }}>
           Configuración

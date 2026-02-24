@@ -11,6 +11,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
 import { Ruta } from '../types/routes';
 import api from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 // ─── Tipos de navegación ──────────────────────────────────────────────────────
 export type RootStackParamList = {
@@ -106,7 +107,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={{ minWidth: 48, minHeight: 48, justifyContent: 'center' }}
         >
-          <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>
@@ -119,7 +120,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
         >
           {loading
             ? <ActivityIndicator color={colors.text} size="small" />
-            : <Text style={{ color: colors.text, fontSize: 22 }}>↻</Text>
+            : <Ionicons name="refresh" size={22} color={colors.text} />
           }
         </TouchableOpacity>
       </View>
@@ -139,7 +140,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
           onPress={() => setSelectedDate(prev => addDays(prev, -1))}
           style={{ padding: 12, minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
         >
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.textSecondary }}>{'<'}</Text>
+          <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary }}>
@@ -150,7 +151,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
           onPress={() => setSelectedDate(prev => addDays(prev, 1))}
           style={{ padding: 12, minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
         >
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.textSecondary }}>{'>'}</Text>
+          <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -200,7 +201,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
                       alignItems: 'center',
                     }}>
                       {seleccionada && (
-                        <Text style={{ color: colors.primary, fontSize: 13, fontWeight: 'bold', lineHeight: 16 }}>✓</Text>
+                        <Ionicons name="checkmark" size={14} color={colors.primary} />
                       )}
                     </View>
                     <Text style={{
@@ -226,7 +227,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
                     Hora de inicio({ruta.horaInicio})
                   </Text>
                   <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                    📅 {ruta.fecha}
+                    <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />{' '}{ruta.fecha}
                   </Text>
                 </View>
               </TouchableOpacity>

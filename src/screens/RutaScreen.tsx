@@ -10,6 +10,7 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -224,7 +225,7 @@ export default function RutaScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={{ minWidth: 48, minHeight: 48, justifyContent: 'center' }}
         >
-          <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Ruta</Text>
@@ -236,7 +237,7 @@ export default function RutaScreen({ navigation, route }: Props) {
           >
             {actualizando
               ? <ActivityIndicator color={colors.text} size="small" />
-              : <Text style={{ color: colors.text, fontSize: 20 }}>↻</Text>
+              : <Ionicons name="refresh" size={22} color={colors.text} />
             }
           </TouchableOpacity>
 
@@ -290,11 +291,11 @@ export default function RutaScreen({ navigation, route }: Props) {
                   {item.codigo}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-                  <Text style={{ fontSize: 11, color: colors.textSecondary, marginRight: 4 }}>👤</Text>
+                  <Ionicons name="person-outline" size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
                   <Text style={{ fontSize: 12, color: colors.textSecondary }}>{item.cliente}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 11, color: colors.textSecondary, marginRight: 4 }}>📍</Text>
+                  <Ionicons name="location-outline" size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
                   <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }}>{item.direccion}</Text>
                 </View>
               </View>
@@ -329,7 +330,7 @@ export default function RutaScreen({ navigation, route }: Props) {
         >
           {optimizando
             ? <ActivityIndicator color={colors.primary} size="small" />
-            : <Text style={{ fontSize: 16 }}>📍</Text>
+            : <Ionicons name="navigate-outline" size={18} color={colors.primary} />
           }
           <Text style={{ color: colors.primary, fontSize: 15, fontWeight: '600' }}>
             Optimizar ruta
