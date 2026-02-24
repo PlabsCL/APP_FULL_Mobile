@@ -1,81 +1,30 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
+import DrawerMenu from '../components/DrawerMenu';
 
 const driverName = 'Pablo Lara';
-const DRAWER_WIDTH = Dimensions.get('window').width * 0.75;
 
 interface HomeScreenProps {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 }
 
-// ─── Drawer item ──────────────────────────────────────────────────────────────
-function DrawerItem({ label, iconName, onPress }: { label: string; iconName: React.ComponentProps<typeof Ionicons>['name']; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}
-    >
-      <Ionicons name={iconName} size={20} color="#374151" style={{ marginRight: 16 }} />
-      <Text style={{ fontSize: 15, color: '#1F2937', fontWeight: '500' }}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const [drawerVisible, setDrawerVisible] = useState(false);
-
-  const openDrawer = () => {
-    setDrawerVisible(true);
-    Animated.parallel([
-      Animated.timing(translateX, {
-        toValue: 0,
-        duration: 280,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropOpacity, {
-        toValue: 1,
-        duration: 280,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const closeDrawer = () => {
-    Animated.parallel([
-      Animated.timing(translateX, {
-        toValue: -DRAWER_WIDTH,
-        duration: 240,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropOpacity, {
-        toValue: 0,
-        duration: 240,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setDrawerVisible(false));
-  };
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
 
       {/* ── Header con hamburguesa ─────────────────────────────────────────── */}
       <View style={{ alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 4 }}>
-        <TouchableOpacity style={{ padding: 8 }} onPress={openDrawer}>
+        <TouchableOpacity style={{ padding: 8 }} onPress={() => setDrawerOpen(true)}>
           <View style={{ width: 24, height: 2, backgroundColor: colors.text, marginBottom: 5 }} />
           <View style={{ width: 24, height: 2, backgroundColor: colors.text, marginBottom: 5 }} />
           <View style={{ width: 24, height: 2, backgroundColor: colors.text }} />
@@ -122,57 +71,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       </View>
 
       {/* ── Drawer ───────────────────────────────────────────────────────── */}
-      {drawerVisible && (
-        <>
-          {/* Backdrop */}
-          <TouchableWithoutFeedback onPress={closeDrawer}>
-            <Animated.View style={{
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              opacity: backdropOpacity,
-            }} />
-          </TouchableWithoutFeedback>
-
-          {/* Panel lateral */}
-          <Animated.View style={{
-            position: 'absolute', top: 0, bottom: 0, left: 0,
-            width: DRAWER_WIDTH,
-            backgroundColor: '#FFFFFF',
-            transform: [{ translateX }],
-            shadowColor: '#000',
-            shadowOffset: { width: 4, height: 0 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 16,
-          }}>
-            {/* Cabecera del drawer */}
-            <View style={{
-              backgroundColor: colors.primary,
-              paddingTop: 48,
-              paddingBottom: 20,
-              paddingHorizontal: 20,
-            }}>
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 4 }}>
-                FULL APP
-              </Text>
-              <Text style={{ color: colors.text, fontSize: 14, opacity: 0.85 }}>
-                {driverName}
-              </Text>
-            </View>
-
-            {/* Ítems del menú */}
-            <View style={{ flex: 1, paddingTop: 8 }}>
-              <DrawerItem label="Perfil"         iconName="person-outline"     onPress={closeDrawer} />
-              <DrawerItem label="Chat"           iconName="chatbubble-outline"  onPress={closeDrawer} />
-
-              <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 8, marginHorizontal: 16 }} />
-
-              <DrawerItem label="Configuración"  iconName="settings-outline"   onPress={() => navigation.navigate('Configuracion')} />
-              <DrawerItem label="Cerrar sesión"  iconName="log-out-outline"    onPress={closeDrawer} />
-            </View>
-          </Animated.View>
-        </>
-      )}
+      <DrawerMenu
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        navigation={navigation}
+      />
 
     </SafeAreaView>
   );

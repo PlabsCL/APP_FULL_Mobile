@@ -16,6 +16,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
+import DrawerMenu from '../components/DrawerMenu';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface PedidoEntrega {
@@ -138,6 +139,7 @@ export default function RutaScreen({ navigation, route }: Props) {
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [optimizando, setOptimizando] = useState(false);
   const [actualizando, setActualizando] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const dragY = useRef(new Animated.Value(0)).current;
   // Ref para que handleDragEnd siempre vea la lista actualizada
@@ -221,12 +223,25 @@ export default function RutaScreen({ navigation, route }: Props) {
         paddingHorizontal: 12,
         paddingVertical: 12,
       }}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ minWidth: 48, minHeight: 48, justifyContent: 'center' }}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        {/* Izquierda: back + hamburger */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ minWidth: 44, minHeight: 48, justifyContent: 'center' }}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setDrawerOpen(true)}
+            style={{ minWidth: 44, minHeight: 48, justifyContent: 'center' }}
+          >
+            <View style={{ gap: 5 }}>
+              {[0, 1, 2].map(i => (
+                <View key={i} style={{ width: 20, height: 2, borderRadius: 1, backgroundColor: colors.text }} />
+              ))}
+            </View>
+          </TouchableOpacity>
+        </View>
 
         <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Ruta</Text>
 
@@ -358,6 +373,11 @@ export default function RutaScreen({ navigation, route }: Props) {
         </TouchableOpacity>
       </View>
 
+      <DrawerMenu
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        navigation={navigation}
+      />
     </SafeAreaView>
   );
 }

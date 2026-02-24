@@ -13,6 +13,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
+import DrawerMenu from '../components/DrawerMenu';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 type EstadoPedido = 'pendiente' | 'entregado' | 'rechazado' | 'postergado';
@@ -144,6 +145,7 @@ export default function EntregasScreen({ navigation }: Props) {
   const [tabActiva, setTabActiva] = useState<'enruta' | 'finalizados'>('enruta');
   const [pendientes, setPendientes] = useState<PedidoConEstado[]>(INIT_PENDIENTES);
   const finalizados = INIT_FINALIZADOS;
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // ── Drag state ───────────────────────────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -196,7 +198,10 @@ export default function EntregasScreen({ navigation }: Props) {
         paddingVertical: 10,
       }}>
         {/* Hamburger */}
-        <TouchableOpacity style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}>
+        <TouchableOpacity
+          onPress={() => setDrawerOpen(true)}
+          style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
+        >
           <View style={{ gap: 5 }}>
             {[0, 1, 2].map(i => (
               <View key={i} style={{ width: 22, height: 2, borderRadius: 1, backgroundColor: colors.text }} />
@@ -304,6 +309,12 @@ export default function EntregasScreen({ navigation }: Props) {
           );
         })}
       </ScrollView>
+
+      <DrawerMenu
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        navigation={navigation}
+      />
 
       {/* ── Footer tabs ─────────────────────────────────────────────────────── */}
       <View style={{
