@@ -114,7 +114,7 @@ export default function ConfirmarScreen({ navigation, route }: Props) {
         {/* Botón principal */}
         <TouchableOpacity
           onPress={() => {
-            // navigation.navigate('Entregas');
+            navigation.navigate('Entregas', { ruta, totalGuias });
           }}
           style={{
             backgroundColor: colors.warning,

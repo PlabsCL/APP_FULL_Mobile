@@ -21,6 +21,7 @@ export type RootStackParamList = {
   Ruta: { ruta: Ruta };
   Confirmar: { ruta: Ruta; totalGuias: number };
   Configuracion: undefined;
+  Entregas: { ruta: Ruta; totalGuias: number };
 };
 
 type Props = {

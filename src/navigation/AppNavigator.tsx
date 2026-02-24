@@ -8,6 +8,7 @@ import VehiculosScreen from '../screens/VehiculosScreen';
 import RutaScreen from '../screens/RutaScreen';
 import ConfirmarScreen from '../screens/ConfirmarScreen';
 import ConfiguracionScreen from '../screens/ConfiguracionScreen';
+import EntregasScreen from '../screens/EntregasScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -56,6 +57,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Configuracion"
           component={ConfiguracionScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Entregas"
+          component={EntregasScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
