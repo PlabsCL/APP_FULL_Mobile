@@ -10,7 +10,9 @@ import {
   Modal,
   StyleSheet,
   Alert,
+  Linking,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -88,6 +90,69 @@ const MAP_REGION = {
   latitudeDelta: 0.025,
   longitudeDelta: 0.025,
 };
+
+// ─── Abrir mapa según preferencia ────────────────────────────────────────────
+async function openMapForPedido(pedido: PedidoConEstado) {
+  const wazeVal = await SecureStore.getItemAsync('usarWaze');
+  const useWaze = wazeVal === 'true';
+
+  if (useWaze) {
+    // waze://?ll={lat},{lng}&navigate=yes inicia navegación directamente al punto
+    const wazeNative = `waze://?ll=${pedido.lat},${pedido.lng}&navigate=yes`;
+    Linking.openURL(wazeNative).catch(() => {
+      Linking.openURL(`https://waze.com/ul?ll=${pedido.lat},${pedido.lng}&navigate=yes`)
+        .catch(() => Alert.alert('Error', 'No se pudo abrir Waze.'));
+    });
+  } else {
+    // maps.google.com/maps?daddr abre Google Maps con la ruta ya cargada al destino
+    Linking.openURL(`https://maps.google.com/maps?daddr=${pedido.lat},${pedido.lng}`)
+      .catch(() => Alert.alert('Error', 'No se pudo abrir Google Maps.'));
+  }
+}
+
+// ─── Item deslizable hacia la derecha ────────────────────────────────────────
+function SwipeableItem({ children, onSwipeRight }: { children: React.ReactNode; onSwipeRight: () => void }) {
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  // El fondo solo aparece cuando hay desplazamiento (evita que se vea en gaps entre items)
+  const bgOpacity = translateX.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gs) =>
+      Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && gs.dx > 0,
+    onPanResponderMove: (_, gs) => {
+      if (gs.dx > 0) translateX.setValue(Math.min(gs.dx, 90));
+    },
+    onPanResponderRelease: (_, gs) => {
+      if (gs.dx > 60) onSwipeRight();
+      Animated.spring(translateX, { toValue: 0, useNativeDriver: false, friction: 8 }).start();
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(translateX, { toValue: 0, useNativeDriver: false, friction: 8 }).start();
+    },
+  })).current;
+
+  return (
+    <View style={{ overflow: 'hidden', marginBottom: 1 }}>
+      {/* Fondo acción — invisible hasta que empieza el swipe */}
+      <Animated.View style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 90,
+        backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center',
+        opacity: bgOpacity,
+      }}>
+        <Ionicons name="navigate-outline" size={24} color="#FFFFFF" />
+        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '600', marginTop: 3 }}>Navegar</Text>
+      </Animated.View>
+      <Animated.View {...panResponder.panHandlers} style={{ transform: [{ translateX }] }}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
 
 // ─── Handle de arrastre ───────────────────────────────────────────────────────
 function DragHandle({ index, isActive, onStart, onMove, onEnd }: {
@@ -387,11 +452,10 @@ export default function EntregasScreen({ navigation }: Props) {
           const leftColor = ESTADO_COLOR[item.estado];
 
           return (
+            <SwipeableItem key={item.key} onSwipeRight={() => openMapForPedido(item)}>
             <Animated.View
-              key={item.key}
               style={{
                 backgroundColor: '#FFFFFF',
-                marginBottom: 1,
                 flexDirection: 'row',
                 alignItems: 'center',
                 borderLeftWidth: 5,
@@ -466,6 +530,7 @@ export default function EntregasScreen({ navigation }: Props) {
                 />
               )}
             </Animated.View>
+            </SwipeableItem>
           );
         })}
       </ScrollView>

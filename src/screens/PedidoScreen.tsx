@@ -122,7 +122,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
   const { pedido } = route.params;
   const detalle = DEFAULT_DETALLE;
 
-  const [tabActiva, setTabActiva] = useState<'gestion' | 'info'>('info');
+  const [tabActiva, setTabActiva] = useState<'gestion' | 'info'>('gestion');
   const [estado, setEstado] = useState<EstadoPedido>(pedido.estado);
 
   const handleLlamar = () => {
@@ -242,17 +242,17 @@ export default function PedidoScreen({ navigation, route }: Props) {
               </View>
             </View>
 
-            {/* Observaciones */}
+            {/* Pruebas de entrega */}
             <View style={{
               backgroundColor: '#FFFFFF',
               borderRadius: 12,
               padding: 16,
             }}>
               <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600', marginBottom: 8 }}>
-                OBSERVACIONES
+                PRUEBAS DE ENTREGA
               </Text>
               <Text style={{ fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>
-                Sin observaciones registradas.
+                Sin evidencias registradas.
               </Text>
             </View>
           </View>

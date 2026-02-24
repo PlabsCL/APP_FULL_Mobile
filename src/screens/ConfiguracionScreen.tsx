@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import {
   View,
   Text,
@@ -116,8 +117,19 @@ export default function ConfiguracionScreen({ navigation }: Props) {
     notificarDespachos: true,
   });
 
-  const toggle = (key: keyof typeof settings) =>
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  useEffect(() => {
+    SecureStore.getItemAsync('usarWaze').then(val => {
+      if (val !== null) setSettings(prev => ({ ...prev, usarWaze: val === 'true' }));
+    });
+  }, []);
+
+  const toggle = (key: keyof typeof settings) => {
+    setSettings(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (key === 'usarWaze') SecureStore.setItemAsync('usarWaze', String(next.usarWaze));
+      return next;
+    });
+  };
 
   const horaLocal = new Date().toLocaleString('es-CL', {
     year: 'numeric', month: '2-digit', day: '2-digit',
