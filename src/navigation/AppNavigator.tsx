@@ -3,8 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
 import HomeScreen from '../screens/HomeScreen';
+import RutasDisponiblesScreen, { RootStackParamList } from '../screens/RutasDisponiblesScreen';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
@@ -26,6 +27,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RutasDisponibles"
+          component={RutasDisponiblesScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

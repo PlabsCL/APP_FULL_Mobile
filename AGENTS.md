@@ -70,26 +70,113 @@ root/
 ```
 ---
 ## 🎨 Sistema de Diseño
-### Colores (`src/constants/colors.ts`)
-```typescript
-primary: '#2563EB'        // Azul — acciones, enlaces
-background: '#111827'     // Negro oscuro — fondo de pantallas
-surface: '#1F2937'        // Gris oscuro — tarjetas, superficies
-text: '#F3F4F6'           // Gris claro — texto principal
-textSecondary: '#D1D5DB'  // Gris medio — texto secundario
-border: '#374151'         // Gris — bordes
-success: '#10B981'        // Verde — estados de éxito
-error: '#EF4444'          // Rojo — errores
-warning: '#F59E0B'        // Naranja — advertencias
-```
+
+### Colores — `src/constants/colors.ts`
+Siempre importar desde `colors`, nunca hardcodear estos valores.
+
+| Token | Hex | Uso |
+|---|---|---|
+| `colors.primary` | `#2563EB` | Botones primarios, acentos azules (pantallas oscuras) |
+| `colors.orange` | `#EA580C` | Fondo de header en todas las pantallas del flujo |
+| `colors.background` | `#111827` | Fondo pantallas oscuras (Home, Login) y footer bar |
+| `colors.surface` | `#1F2937` | Tarjetas y superficies en contexto oscuro |
+| `colors.text` | `#F3F4F6` | Texto principal sobre fondo oscuro |
+| `colors.textSecondary` | `#D1D5DB` | Texto secundario sobre fondo oscuro |
+| `colors.border` | `#374151` | Bordes en contexto oscuro |
+| `colors.success` | `#10B981` | Estados de éxito |
+| `colors.error` | `#EF4444` | Errores y alertas |
+| `colors.warning` | `#F59E0B` | Advertencias, borde de tarjeta seleccionada |
+
+Colores adicionales para pantallas claras (hardcode permitido):
+
+| Valor | Uso |
+|---|---|
+| `#F5F5F5` | Fondo de pantallas con contenido (listas, formularios) |
+| `#FFFFFF` | Fondo de tarjetas en estado normal |
+| `#FEF3C7` | Fondo de tarjeta seleccionada (amber claro) |
+| `#E5E7EB` | Borde de tarjeta normal |
+| `#1F2937` | Texto oscuro principal en pantallas claras |
+| `#374151` | Texto medio (labels, selectores de fecha) |
+| `#6B7280` | Texto secundario en pantallas claras |
+| `#9CA3AF` | Texto placeholder / estado vacío |
+
+---
+
 ### Tipografía
-- Fuentes del sistema (`-apple-system`, `system-ui`)
-- Sin fuentes personalizadas preconfiguradas
-- Tamaños: escala Tailwind (text-sm, text-base, text-lg, etc.)
-### Espaciado y Áreas Táctiles
-- Mínimo 48px para elementos interactivos
-- Utilidades Tailwind `min-h-[48px]` y `min-w-[48px]` disponibles
-- Padding recomendado: `p-4` (16px), `p-3` (12px), `p-6` (24px)
+Fuente del sistema (`-apple-system`, `system-ui`). Sin fuentes personalizadas.
+
+| Uso | fontSize | fontWeight |
+|---|---|---|
+| Título de app (Home) | 32 | `'bold'` |
+| Título de header | 18 | `'bold'` |
+| Valor destacado (ID, número) | 20 | `'bold'` |
+| Código / label destacado | 16 | `'bold'` |
+| Logo / texto icono | 28 | `'bold'` |
+| Label de sección / fecha | 14 | `'600'` |
+| Texto de botón | 17 | `'600'` |
+| Texto de detalle / metadata | 13 | normal |
+| Texto vacío / placeholder | 16 | normal |
+| Footer brand | 14 | `'600'` |
+
+---
+
+### Espaciado
+| Elemento | Valor |
+|---|---|
+| Padding de pantalla / ScrollView | 16px |
+| Padding interior de tarjetas | 16px |
+| Padding header (H y V) | 12px |
+| Margen entre tarjetas | 12px |
+| Min-height botón acción principal | 56px |
+| Min-height botón footer ("Siguiente") | 52px |
+| Área táctil mínima | `minWidth: 48, minHeight: 48` |
+
+---
+
+### Bordes y radios
+| Elemento | borderRadius |
+|---|---|
+| Tarjetas (cards) | 10 |
+| Botones primarios | 12 |
+| Avatar / logo circular | 48 (para View de 96px) |
+| Dot indicador de estado | 6 (para View de 12px) |
+
+---
+
+### Tarjetas (Cards)
+```
+Estado normal:      backgroundColor: '#FFFFFF'  borderColor: '#E5E7EB'  borderWidth: 1
+Estado seleccionado: backgroundColor: '#FEF3C7'  borderColor: '#F59E0B'  borderWidth: 1.5
+borderRadius: 10  |  padding: 16  |  marginBottom: 12
+```
+
+---
+
+### Estructura de pantallas del flujo principal
+Todas las pantallas de flujo (después de Home) siguen este layout:
+```
+┌──────────────────────────────────┐
+│  HEADER  (colors.orange)         │  ← atrás | título | acción
+│  paddingH:12  paddingV:12        │
+├──────────────────────────────────┤
+│  SUB-HEADER / BARRA FILTRO       │  ← fondo #FFF, borderBottom #E5E7EB
+│  (selector fecha, tabs, etc.)    │
+├──────────────────────────────────┤
+│  CONTENIDO  (ScrollView)         │  ← fondo #F5F5F5, padding: 16
+│  Tarjetas / listas / formularios │
+├──────────────────────────────────┤
+│  FOOTER BAR  (colors.background) │  ← botón "Siguiente" / acción final
+│  minHeight: 52                   │
+└──────────────────────────────────┘
+```
+
+### Pantallas oscuras (Home, Login, Splash)
+```
+backgroundColor: colors.background (#111827)
+text:            colors.text (#F3F4F6)
+cards/surface:   colors.surface (#1F2937)
+borders:         colors.border (#374151)
+```
 ---
 ## 💻 Convenciones de Código
 ### Nomenclatura de Archivos
@@ -174,13 +261,13 @@ npx tsc --watch
   - Se puede extender para logs y manejo de errores
 ---
 ## 📋 Notas para Agentes
-- **Aún no existen pantallas** — usar este scaffold como base
-- **Pantalla placeholder** existe en AppNavigator — reemplazar al agregar pantallas reales
-- **TailwindCSS está configurado** — usar prop `className` en lugar de `style`
-- **Tema oscuro obligatorio** — todas las pantallas deben usar fondo oscuro
-- **La app está en español** — todos los textos visibles al usuario deben ir en español
-- **Áreas táctiles de 48px** — verificar que todos los elementos interactivos cumplan este mínimo
+- **Pantallas existentes:** `HomeScreen` y `RutasDisponiblesScreen` — respetar su estilo al crear nuevas
+- **Estilos:** usar `StyleSheet` inline (no `className`/NativeWind) — el proyecto usa estilos inline consistentemente
+- **Dos contextos visuales:** pantallas oscuras (Home/Login) usan `colors.background`; pantallas de flujo usan `#F5F5F5` + header naranja
+- **La app está en español (es-CL)** — todos los textos visibles al usuario deben ir en español
+- **Áreas táctiles de 48px** — `minWidth: 48, minHeight: 48` en todo `TouchableOpacity`
 - **Backend compartido con Dashboard** — coordinar contratos de API antes de implementar endpoints nuevos
+- **Datos mock** — mientras no exista backend, usar constantes `MOCK_*` dentro del mismo archivo de pantalla
 ---
 ## 🤖 Selección de Modelo
 Antes de ejecutar cualquier tarea, recomendar el modelo adecuado:

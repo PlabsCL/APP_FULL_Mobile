@@ -1,43 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api from '../services/api';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
-import { Ruta } from '../types/routes';
+import { RootStackParamList } from './RutasDisponiblesScreen';
 
 const driverName = 'Pablo Lara';
 
-interface HomeScreenProps {}
+interface HomeScreenProps {
+  navigation: StackNavigationProp<RootStackParamList, 'Home'>;
+}
 
-export default function HomeScreen({}: HomeScreenProps) {
-  const [loading, setLoading] = useState(false);
-
-  const verificarRutas = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get<Ruta[]>('/rutas/disponibles');
-      if (res.data && res.data.length === 0) {
-        Alert.alert(
-          'Sin rutas',
-          'No hay rutas disponibles en este momento.'
-        );
-      }
-      // Si hay rutas: sin acción por ahora
-    } catch {
-      Alert.alert(
-        'Error',
-        'No se pudo verificar las rutas. Intenta nuevamente.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   return (
     <SafeAreaView
@@ -118,8 +96,7 @@ export default function HomeScreen({}: HomeScreenProps) {
 
         {/* Routes Button */}
         <TouchableOpacity
-          onPress={verificarRutas}
-          disabled={loading}
+          onPress={() => navigation.navigate('RutasDisponibles')}
           style={{
             width: '100%',
             minHeight: 56,
@@ -127,22 +104,17 @@ export default function HomeScreen({}: HomeScreenProps) {
             borderRadius: 12,
             justifyContent: 'center',
             alignItems: 'center',
-            opacity: loading ? 0.8 : 1,
           }}
         >
-          {loading ? (
-            <ActivityIndicator color={colors.text} size="large" />
-          ) : (
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: 'bold',
-                color: colors.text,
-              }}
-            >
-              Rutas Disponibles
-            </Text>
-          )}
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: 'bold',
+              color: colors.text,
+            }}
+          >
+            Rutas Disponibles
+          </Text>
         </TouchableOpacity>
       </View>
 
