@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import { colors } from '../constants/colors';
 import { Ruta } from '../types/routes';
@@ -46,6 +46,18 @@ export default function HomeScreen({}: HomeScreenProps) {
         backgroundColor: colors.background,
       }}
     >
+      {/* Header with hamburger */}
+      <View style={{ alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 4 }}>
+        <TouchableOpacity
+          style={{ padding: 8 }}
+          onPress={() => {}}
+        >
+          <View style={{ width: 24, height: 2, backgroundColor: colors.text, marginBottom: 5 }} />
+          <View style={{ width: 24, height: 2, backgroundColor: colors.text, marginBottom: 5 }} />
+          <View style={{ width: 24, height: 2, backgroundColor: colors.text }} />
+        </TouchableOpacity>
+      </View>
+
       <View
         style={{
           flex: 1,
@@ -135,7 +147,7 @@ export default function HomeScreen({}: HomeScreenProps) {
       </View>
 
       {/* Footer Brand */}
-      <View style={{ alignItems: 'center', paddingBottom: 16 }}>
+      <View style={{ alignItems: 'center', paddingBottom: 8 }}>
         <Text
           style={{
             fontSize: 14,
@@ -143,7 +155,7 @@ export default function HomeScreen({}: HomeScreenProps) {
             fontWeight: '600',
           }}
         >
-          DispatchTrack
+          FULL APP
         </Text>
       </View>
     </SafeAreaView>
