@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
 import { Ruta } from '../types/routes';
@@ -16,7 +16,8 @@ import api from '../services/api';
 export type RootStackParamList = {
   Home: undefined;
   RutasDisponibles: undefined;
-  DetalleRuta: { ruta: Ruta };
+  Vehiculos: { ruta: Ruta };
+  Ruta: { ruta: Ruta };
 };
 
 type Props = {
@@ -48,10 +49,20 @@ const MOCK_RUTAS: Ruta[] = [
     horaInicio: '09:00-AM',
     fecha: formatDate(new Date()),
   },
+  {
+    id: '42760198',
+    codigo: 'ORTE-01',
+    nombre: 'ORTE-01',
+    destino: 'Maipú',
+    cantidadParadas: 8,
+    horaInicio: '11:00-AM',
+    fecha: formatDate(new Date()),
+  },
 ];
 
-// ─── Componente ───────────────────────────────────────────────────────────────
+// ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function RutasDisponiblesScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [rutas, setRutas] = useState<Ruta[]>(MOCK_RUTAS);
   const [selectedRuta, setSelectedRuta] = useState<Ruta | null>(MOCK_RUTAS[0]);
@@ -71,18 +82,18 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
       setRutas(res.data);
       setSelectedRuta(res.data[0] ?? null);
     } catch {
-      // sin conexión real aún — no mostrar error
+      // sin conexión real aún
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={{
-        backgroundColor: colors.orange,
+        backgroundColor: colors.primary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -93,10 +104,10 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={{ minWidth: 48, minHeight: 48, justifyContent: 'center' }}
         >
-          <Text style={{ color: '#FFF', fontSize: 24, fontWeight: 'bold' }}>←</Text>
+          <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>←</Text>
         </TouchableOpacity>
 
-        <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>
+        <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>
           Rutas disponibles
         </Text>
 
@@ -105,8 +116,8 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
           style={{ minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'flex-end' }}
         >
           {loading
-            ? <ActivityIndicator color="#FFF" size="small" />
-            : <Text style={{ color: '#FFF', fontSize: 22 }}>↻</Text>
+            ? <ActivityIndicator color={colors.text} size="small" />
+            : <Text style={{ color: colors.text, fontSize: 22 }}>↻</Text>
           }
         </TouchableOpacity>
       </View>
@@ -116,20 +127,20 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: colors.surface,
         paddingVertical: 10,
         paddingHorizontal: 4,
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}>
         <TouchableOpacity
           onPress={() => setSelectedDate(prev => addDays(prev, -1))}
           style={{ padding: 12, minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
         >
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#374151' }}>{'<'}</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.textSecondary }}>{'<'}</Text>
         </TouchableOpacity>
 
-        <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151' }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary }}>
           {labelFecha}
         </Text>
 
@@ -137,7 +148,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
           onPress={() => setSelectedDate(prev => addDays(prev, 1))}
           style={{ padding: 12, minWidth: 48, minHeight: 48, justifyContent: 'center', alignItems: 'center' }}
         >
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#374151' }}>{'>'}</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.textSecondary }}>{'>'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -145,7 +156,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
         {rutas.length === 0 ? (
           <View style={{ marginTop: 60, alignItems: 'center' }}>
-            <Text style={{ color: '#9CA3AF', fontSize: 16 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 16 }}>
               No hay rutas para este día
             </Text>
           </View>
@@ -157,15 +168,16 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
                 key={ruta.id}
                 onPress={() => setSelectedRuta(ruta)}
                 style={{
-                  backgroundColor: seleccionada ? '#FEF3C7' : '#FFFFFF',
+                  backgroundColor: seleccionada ? colors.primary : colors.surface,
                   borderRadius: 10,
                   padding: 16,
                   marginBottom: 12,
-                  borderWidth: seleccionada ? 1.5 : 1,
-                  borderColor: seleccionada ? '#F59E0B' : '#E5E7EB',
+                  borderWidth: 1,
+                  borderColor: seleccionada ? colors.primary : colors.border,
+                  opacity: seleccionada ? 0.95 : 1,
                 }}
               >
-                {/* Fila superior: dot + ID + codigo */}
+                {/* Fila superior: checkbox + ID + codigo */}
                 <View style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -173,28 +185,45 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
                   marginBottom: 8,
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Checkbox */}
                     <View style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 6,
-                      backgroundColor: colors.orange,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 4,
+                      borderWidth: 2,
+                      borderColor: seleccionada ? colors.text : colors.textSecondary,
+                      backgroundColor: seleccionada ? colors.text : 'transparent',
                       marginRight: 10,
-                    }} />
-                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937' }}>
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      {seleccionada && (
+                        <Text style={{ color: colors.primary, fontSize: 13, fontWeight: 'bold', lineHeight: 16 }}>✓</Text>
+                      )}
+                    </View>
+                    <Text style={{
+                      fontSize: 20,
+                      fontWeight: 'bold',
+                      color: colors.text,
+                    }}>
                       {ruta.id}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.orange }}>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: seleccionada ? colors.warning : colors.primary
+                  }}>
                     {ruta.codigo}
                   </Text>
                 </View>
 
                 {/* Fila inferior: hora + fecha */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: '#6B7280' }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                     Hora de inicio({ruta.horaInicio})
                   </Text>
-                  <Text style={{ fontSize: 13, color: '#6B7280' }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                     📅 {ruta.fecha}
                   </Text>
                 </View>
@@ -205,12 +234,12 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
       </ScrollView>
 
       {/* ── Botón Siguiente ─────────────────────────────────────────────────── */}
-      <View style={{ backgroundColor: '#111827', paddingVertical: 4 }}>
+      <View style={{ backgroundColor: colors.background, paddingTop: 4, paddingBottom: insets.bottom || 12 }}>
         <TouchableOpacity
           disabled={!selectedRuta}
           onPress={() => {
             if (selectedRuta) {
-              // navigation.navigate('DetalleRuta', { ruta: selectedRuta });
+              navigation.navigate('Vehiculos', { ruta: selectedRuta });
             }
           }}
           style={{
@@ -220,7 +249,7 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
             opacity: selectedRuta ? 1 : 0.4,
           }}
         >
-          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '600' }}>
+          <Text style={{ color: colors.primary, fontSize: 17, fontWeight: '600' }}>
             Siguiente
           </Text>
         </TouchableOpacity>

@@ -156,18 +156,45 @@ borderRadius: 10  |  padding: 16  |  marginBottom: 12
 Todas las pantallas de flujo (después de Home) siguen este layout:
 ```
 ┌──────────────────────────────────┐
-│  HEADER  (colors.orange)         │  ← atrás | título | acción
+│  SafeAreaView edges={['top']}    │  ← protege barra de estado superior
+│  HEADER  (colors.primary)        │  ← atrás | título | acción
 │  paddingH:12  paddingV:12        │
 ├──────────────────────────────────┤
-│  SUB-HEADER / BARRA FILTRO       │  ← fondo #FFF, borderBottom #E5E7EB
+│  SUB-HEADER / BARRA FILTRO       │  ← colors.surface, borderBottom colors.border
 │  (selector fecha, tabs, etc.)    │
 ├──────────────────────────────────┤
-│  CONTENIDO  (ScrollView)         │  ← fondo #F5F5F5, padding: 16
+│  CONTENIDO  (ScrollView)         │  ← fondo colors.background, padding: 16
 │  Tarjetas / listas / formularios │
 ├──────────────────────────────────┤
 │  FOOTER BAR  (colors.background) │  ← botón "Siguiente" / acción final
-│  minHeight: 52                   │
+│  paddingBottom: insets.bottom    │  ← protege botones de navegación del teléfono
 └──────────────────────────────────┘
+```
+
+### Regla obligatoria de Safe Area (TODAS las pantallas)
+```typescript
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// En el componente:
+const insets = useSafeAreaInsets();
+
+// SafeAreaView solo maneja el TOP (para que el header del footer tenga el color correcto)
+<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+
+  {/* ... contenido ... */}
+
+  {/* Footer bar: paddingBottom dinámico para no quedar bajo los botones del sistema */}
+  <View style={{
+    backgroundColor: colors.background,
+    paddingTop: 4,
+    paddingBottom: insets.bottom || 12,
+  }}>
+    <TouchableOpacity style={{ minHeight: 52, ... }}>
+      <Text>Siguiente</Text>
+    </TouchableOpacity>
+  </View>
+
+</SafeAreaView>
 ```
 
 ### Pantallas oscuras (Home, Login, Splash)

@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { colors } from '../constants/colors';
 import HomeScreen from '../screens/HomeScreen';
 import RutasDisponiblesScreen, { RootStackParamList } from '../screens/RutasDisponiblesScreen';
+import VehiculosScreen from '../screens/VehiculosScreen';
+import RutaScreen from '../screens/RutaScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -32,6 +34,16 @@ export default function AppNavigator() {
         <Stack.Screen
           name="RutasDisponibles"
           component={RutasDisponiblesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Vehiculos"
+          component={VehiculosScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Ruta"
+          component={RutaScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
