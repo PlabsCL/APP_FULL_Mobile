@@ -1,4 +1,4 @@
-export type EstadoPedido = 'pendiente' | 'entregado' | 'rechazado' | 'postergado';
+export type EstadoPedido = 'pendiente' | 'entregado' | 'no_entregado' | 'entrega_parcial' | 'rechazado' | 'postergado';
 
 export interface PedidoConEstado {
   key: string;

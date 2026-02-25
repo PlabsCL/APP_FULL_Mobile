@@ -7,7 +7,7 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -21,7 +21,6 @@ interface Props {
   route: RouteProp<RootStackParamList, 'Pedido'>;
 }
 
-// ─── Detalle adicional mock (datos tipo Excel) ────────────────────────────────
 interface PedidoDetalle {
   telefono: string;
   fechaDesde: string;
@@ -60,12 +59,22 @@ const DEFAULT_DETALLE: PedidoDetalle = {
   canalLikewise: 'TDE',
 };
 
-// ─── Colores por estado ───────────────────────────────────────────────────────
+// ─── Configuración de estados ─────────────────────────────────────────────────
 const ESTADO_CONFIG: Record<EstadoPedido, { color: string; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = {
-  pendiente:  { color: '#6B7280', label: 'Pendiente',  icon: 'time-outline'        },
-  entregado:  { color: '#10B981', label: 'Entregado',  icon: 'checkmark-circle-outline' },
-  rechazado:  { color: '#EF4444', label: 'Rechazado',  icon: 'close-circle-outline' },
-  postergado: { color: '#F59E0B', label: 'Postergado', icon: 'calendar-outline'    },
+  pendiente:      { color: '#6B7280', label: 'Pendiente',        icon: 'time-outline'             },
+  no_entregado:   { color: '#EF4444', label: 'No Entregado',     icon: 'close-circle-outline'     },
+  entrega_parcial:{ color: '#F59E0B', label: 'Entrega parcial',  icon: 'remove-circle-outline'    },
+  entregado:      { color: '#10B981', label: 'Entregado',        icon: 'checkmark-circle-outline' },
+  rechazado:      { color: '#EF4444', label: 'Rechazado',        icon: 'close-circle-outline'     },
+  postergado:     { color: '#F59E0B', label: 'Postergado',       icon: 'calendar-outline'         },
+};
+
+// Botones visibles en la pantalla (orden de imagen)
+const ESTADOS_BOTONES: EstadoPedido[] = ['no_entregado', 'entrega_parcial', 'entregado'];
+
+// SubEstados por estado (sin buscador)
+const SUBESTADOS: Partial<Record<EstadoPedido, string[]>> = {
+  entregado: ['Entrega Exitosa'],
 };
 
 // ─── Fila de dato ─────────────────────────────────────────────────────────────
@@ -82,7 +91,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ─── Botón de acción de estado ────────────────────────────────────────────────
+// ─── Botón de estado ──────────────────────────────────────────────────────────
 function EstadoBtn({ estado, current, onPress }: {
   estado: EstadoPedido;
   current: EstadoPedido;
@@ -110,6 +119,7 @@ function EstadoBtn({ estado, current, onPress }: {
         fontWeight: '600',
         marginTop: 4,
         color: isActive ? cfg.color : '#9CA3AF',
+        textAlign: 'center',
       }}>
         {cfg.label}
       </Text>
@@ -121,9 +131,28 @@ function EstadoBtn({ estado, current, onPress }: {
 export default function PedidoScreen({ navigation, route }: Props) {
   const { pedido } = route.params;
   const detalle = DEFAULT_DETALLE;
+  const insets = useSafeAreaInsets();
 
   const [tabActiva, setTabActiva] = useState<'gestion' | 'info'>('gestion');
   const [estado, setEstado] = useState<EstadoPedido>(pedido.estado);
+  const [subestado, setSubestado] = useState<string | null>(null);
+  const [dropdownAbierto, setDropdownAbierto] = useState(false);
+
+  const esEntregado = estado === 'entregado';
+  const subestadosDisponibles = SUBESTADOS[estado] ?? [];
+  const tieneSubestados = subestadosDisponibles.length > 0;
+
+  const estadoCompletado =
+    estado !== 'pendiente' &&
+    (tieneSubestados ? subestado !== null : true);
+
+  const puedeConfirmar = false;
+
+  const handleSetEstado = (nuevo: EstadoPedido) => {
+    setEstado(nuevo);
+    setSubestado(null);
+    setDropdownAbierto(false);
+  };
 
   const handleLlamar = () => {
     Linking.openURL(`tel:${detalle.telefono}`).catch(() =>
@@ -142,6 +171,10 @@ export default function PedidoScreen({ navigation, route }: Props) {
     );
   };
 
+  const handleConfirmar = () => {
+    Alert.alert('Confirmar gestión', `Estado: ${ESTADO_CONFIG[estado].label}${subestado ? ` — ${subestado}` : ''}`);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }} edges={['top']}>
 
@@ -152,7 +185,6 @@ export default function PedidoScreen({ navigation, route }: Props) {
         paddingTop: 6,
         paddingBottom: 0,
       }}>
-        {/* Fila: back + título */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingBottom: 12 }}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -203,58 +235,132 @@ export default function PedidoScreen({ navigation, route }: Props) {
         {tabActiva === 'gestion' && (
           <View style={{ padding: 16 }}>
 
-            {/* Estado actual */}
+            {/* ── Tarjeta Estado (se tiñe verde si entregado) ── */}
             <View style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: esEntregado ? '#F0FDF4' : '#FFFFFF',
               borderRadius: 12,
               padding: 16,
               marginBottom: 16,
+              borderWidth: esEntregado ? 1.5 : 0,
+              borderColor: esEntregado ? '#10B981' : 'transparent',
             }}>
-              <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600', marginBottom: 12 }}>
-                ESTADO ACTUAL
-              </Text>
+              {/* Título + ícono confirmación */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ fontSize: 14, color: esEntregado ? '#10B981' : '#6B7280', fontWeight: '700' }}>
+                  Estado
+                </Text>
+                {esEntregado && (
+                  <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                )}
+              </View>
+
+              {/* Botones de estado */}
+              <View style={{ flexDirection: 'row', marginHorizontal: -4 }}>
+                {ESTADOS_BOTONES.map((e) => (
+                  <EstadoBtn
+                    key={e}
+                    estado={e}
+                    current={estado}
+                    onPress={() => handleSetEstado(e)}
+                  />
+                ))}
+              </View>
+
+              {/* Subestado — solo si el estado tiene subestados */}
+              {tieneSubestados && (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={{ fontSize: 13, color: '#374151', fontWeight: '600', marginBottom: 8 }}>
+                    Subestado
+                  </Text>
+
+                  {/* Selector — desactivado una vez seleccionado */}
+                  <TouchableOpacity
+                    onPress={() => !subestado && setDropdownAbierto(!dropdownAbierto)}
+                    disabled={subestado !== null}
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderWidth: 1.5,
+                      borderColor: subestado ? '#10B981' : '#D1D5DB',
+                      borderRadius: 8,
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
+                      backgroundColor: subestado ? '#F0FDF4' : '#FFFFFF',
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 14,
+                      color: subestado ? '#10B981' : '#9CA3AF',
+                      fontWeight: subestado ? '600' : '400',
+                    }}>
+                      {subestado ?? 'Seleccionar Sub Estado'}
+                    </Text>
+                    {subestado
+                      ? <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                      : <Ionicons name={dropdownAbierto ? 'chevron-up' : 'chevron-down'} size={20} color="#6B7280" />
+                    }
+                  </TouchableOpacity>
+
+                  {/* Lista de opciones (sin buscador) */}
+                  {dropdownAbierto && (
+                    <View style={{
+                      backgroundColor: '#FFFFFF',
+                      borderWidth: 1,
+                      borderColor: '#E5E7EB',
+                      borderRadius: 8,
+                      marginTop: 4,
+                      overflow: 'hidden',
+                    }}>
+                      {subestadosDisponibles.map((opcion) => (
+                        <TouchableOpacity
+                          key={opcion}
+                          onPress={() => {
+                            setSubestado(opcion);
+                            setDropdownAbierto(false);
+                          }}
+                          style={{
+                            paddingHorizontal: 14,
+                            paddingVertical: 14,
+                            borderBottomWidth: 1,
+                            borderBottomColor: '#F3F4F6',
+                          }}
+                        >
+                          <Text style={{ fontSize: 14, color: '#1F2937' }}>{opcion}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* Pruebas de entrega — activo solo cuando Estado está completo */}
+            <TouchableOpacity
+              onPress={() => estadoCompletado && Alert.alert('Pruebas de entrega', 'Funcionalidad pendiente.')}
+              disabled={!estadoCompletado}
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderWidth: 1.5,
+                borderColor: estadoCompletado ? colors.primary : '#E5E7EB',
+                marginTop: 16,
+                opacity: estadoCompletado ? 1 : 0.4,
+              }}
+            >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{
-                  width: 12, height: 12, borderRadius: 6,
-                  backgroundColor: ESTADO_CONFIG[estado].color,
-                  marginRight: 8,
-                }} />
-                <Text style={{ fontSize: 16, fontWeight: '700', color: ESTADO_CONFIG[estado].color }}>
-                  {ESTADO_CONFIG[estado].label}
+                <Ionicons name="camera-outline" size={20} color={estadoCompletado ? colors.primary : '#9CA3AF'} style={{ marginRight: 8 }} />
+                <Text style={{ fontSize: 14, color: estadoCompletado ? colors.primary : '#9CA3AF', fontWeight: '700' }}>
+                  Pruebas de entrega
                 </Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={20} color={estadoCompletado ? colors.primary : '#9CA3AF'} />
+            </TouchableOpacity>
 
-            {/* Botones de cambio de estado */}
-            <View style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 16,
-            }}>
-              <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600', marginBottom: 12 }}>
-                CAMBIAR ESTADO
-              </Text>
-              <View style={{ flexDirection: 'row', marginHorizontal: -4 }}>
-                <EstadoBtn estado="entregado"  current={estado} onPress={() => setEstado('entregado')}  />
-                <EstadoBtn estado="rechazado"  current={estado} onPress={() => setEstado('rechazado')}  />
-                <EstadoBtn estado="postergado" current={estado} onPress={() => setEstado('postergado')} />
-              </View>
-            </View>
-
-            {/* Pruebas de entrega */}
-            <View style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 12,
-              padding: 16,
-            }}>
-              <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600', marginBottom: 8 }}>
-                PRUEBAS DE ENTREGA
-              </Text>
-              <Text style={{ fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>
-                Sin evidencias registradas.
-              </Text>
-            </View>
           </View>
         )}
 
@@ -279,7 +385,6 @@ export default function PedidoScreen({ navigation, route }: Props) {
                 paddingHorizontal: 16,
                 paddingVertical: 14,
               }}>
-                {/* Desde */}
                 <View style={{ alignItems: 'flex-start' }}>
                   <Text style={{ fontSize: 12, color: '#6B7280' }}>
                     {detalle.diaSemanaDesde} {detalle.fechaDesde}
@@ -289,10 +394,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
                   </Text>
                   <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Entrega</Text>
                 </View>
-
                 <Ionicons name="arrow-forward" size={18} color="#9CA3AF" style={{ marginHorizontal: 16 }} />
-
-                {/* Hasta */}
                 <View style={{ alignItems: 'flex-start' }}>
                   <Text style={{ fontSize: 12, color: '#6B7280' }}>
                     {detalle.diaSemanaHasta} {detalle.fechaHasta}
@@ -319,7 +421,6 @@ export default function PedidoScreen({ navigation, route }: Props) {
                 <Text style={{ fontSize: 15, fontWeight: '700', color: '#1F2937', marginBottom: 14 }}>
                   {pedido.cliente}
                 </Text>
-                {/* Acciones */}
                 <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#E5E7EB' }}>
                   <TouchableOpacity
                     onPress={handleLlamar}
@@ -353,7 +454,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
               </View>
             </View>
 
-            {/* Dirección de entrega */}
+            {/* Dirección */}
             <View style={{
               backgroundColor: '#FFFFFF',
               borderRadius: 12,
@@ -404,6 +505,39 @@ export default function PedidoScreen({ navigation, route }: Props) {
           </View>
         )}
       </ScrollView>
+
+      {/* ── Footer: Confirmar Gestión ────────────────────────────────────────── */}
+      {tabActiva === 'gestion' && (
+        <View style={{
+          backgroundColor: '#FFFFFF',
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: insets.bottom || 12,
+          borderTopWidth: 1,
+          borderTopColor: '#E5E7EB',
+        }}>
+          <TouchableOpacity
+            onPress={handleConfirmar}
+            disabled={!puedeConfirmar}
+            style={{
+              backgroundColor: puedeConfirmar ? '#10B981' : '#D1D5DB',
+              borderRadius: 12,
+              paddingVertical: 16,
+              alignItems: 'center',
+              minHeight: 52,
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{
+              fontSize: 17,
+              fontWeight: '600',
+              color: '#FFFFFF',
+            }}>
+              Confirmar gestión
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
     </SafeAreaView>
   );
