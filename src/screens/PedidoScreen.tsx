@@ -337,7 +337,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
 
             {/* Pruebas de entrega — activo solo cuando Estado está completo */}
             <TouchableOpacity
-              onPress={() => estadoCompletado && Alert.alert('Pruebas de entrega', 'Funcionalidad pendiente.')}
+              onPress={() => {}}
               disabled={!estadoCompletado}
               style={{
                 backgroundColor: '#FFFFFF',
@@ -381,7 +381,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
               <View style={{ height: 1, backgroundColor: '#E5E7EB', marginHorizontal: 16 }} />
               <View style={{
                 flexDirection: 'row',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 paddingHorizontal: 16,
                 paddingVertical: 14,
               }}>
@@ -394,7 +394,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
                   </Text>
                   <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Entrega</Text>
                 </View>
-                <Ionicons name="arrow-forward" size={18} color="#9CA3AF" style={{ marginHorizontal: 16 }} />
+                <Ionicons name="arrow-forward" size={18} color="#9CA3AF" style={{ marginHorizontal: 16, marginTop: 20 }} />
                 <View style={{ alignItems: 'flex-start' }}>
                   <Text style={{ fontSize: 12, color: '#6B7280' }}>
                     {detalle.diaSemanaHasta} {detalle.fechaHasta}
