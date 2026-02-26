@@ -235,6 +235,24 @@ export default function EntregasScreen({ navigation, route }: Props) {
   }, [route.params?.pedidoGestionado]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // ── Selección bulk ───────────────────────────────────────────────────────────
+  const [modoSeleccion, setModoSeleccion] = useState(false);
+  const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
+
+  const toggleModoSeleccion = () => {
+    setModoSeleccion(prev => !prev);
+    setSeleccionados(new Set());
+  };
+
+  const toggleSeleccion = (key: string) => {
+    setSeleccionados(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   // ── Búsqueda ─────────────────────────────────────────────────────────────────
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -406,6 +424,18 @@ export default function EntregasScreen({ navigation, route }: Props) {
           >
             <Ionicons name="map-outline" size={22} color={colors.text} />
           </TouchableOpacity>
+
+          {/* Selección bulk */}
+          <TouchableOpacity
+            onPress={toggleModoSeleccion}
+            style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <Ionicons
+              name={modoSeleccion ? 'close-circle-outline' : 'checkbox-outline'}
+              size={22}
+              color={modoSeleccion ? colors.warning : colors.text}
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -490,14 +520,34 @@ export default function EntregasScreen({ navigation, route }: Props) {
                 transform: isActive ? [{ translateY: dragY }] : [],
               }}
             >
+              {/* Checkbox bulk (solo En Ruta en modo selección) */}
+              {modoSeleccion && tabActiva === 'enruta' && (
+                <TouchableOpacity
+                  onPress={() => toggleSeleccion(item.key)}
+                  style={{ paddingHorizontal: 12, justifyContent: 'center', alignSelf: 'stretch' }}
+                >
+                  <Ionicons
+                    name={seleccionados.has(item.key) ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={seleccionados.has(item.key) ? colors.primary : '#9CA3AF'}
+                  />
+                </TouchableOpacity>
+              )}
+
               {/* Contenido */}
               <TouchableOpacity
-                style={{ flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 4 }}
-                onPress={() => navigation.navigate('Pedido', {
-                  pedido: item,
-                  formularioCompletado: tabActiva === 'finalizados' ? true : undefined,
-                  modoEdicion: tabActiva === 'finalizados' ? true : undefined,
-                })}
+                style={{ flex: 1, paddingVertical: 12, paddingLeft: modoSeleccion && tabActiva === 'enruta' ? 4 : 12, paddingRight: 4 }}
+                onPress={() => {
+                  if (modoSeleccion && tabActiva === 'enruta') {
+                    toggleSeleccion(item.key);
+                  } else {
+                    navigation.navigate('Pedido', {
+                      pedido: item,
+                      formularioCompletado: tabActiva === 'finalizados' ? true : undefined,
+                      modoEdicion: tabActiva === 'finalizados' ? true : undefined,
+                    });
+                  }
+                }}
                 activeOpacity={0.7}
               >
 
@@ -543,8 +593,8 @@ export default function EntregasScreen({ navigation, route }: Props) {
                 )}
               </TouchableOpacity>
 
-              {/* Handle de arrastre (solo pendientes) */}
-              {item.estado === 'pendiente' && (
+              {/* Handle de arrastre (solo pendientes, fuera de modo selección) */}
+              {item.estado === 'pendiente' && !modoSeleccion && (
                 <DragHandle
                   index={index}
                   isActive={isActive}
