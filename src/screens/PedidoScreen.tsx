@@ -236,6 +236,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
   const puedeConfirmar = estadoCompletado && pruebasCompletadas;
 
   const handleSetEstado = (nuevo: EstadoPedido) => {
+    if (nuevo !== estado) setEvidencias(undefined);
     setEstado(nuevo);
     setSubestado(null);
     setDropdownAbierto(false);
@@ -369,10 +370,9 @@ export default function PedidoScreen({ navigation, route }: Props) {
                     Subestado
                   </Text>
 
-                  {/* Selector — desactivado una vez seleccionado */}
+                  {/* Selector — siempre tappable para poder cambiar */}
                   <TouchableOpacity
-                    onPress={() => !subestado && setDropdownAbierto(!dropdownAbierto)}
-                    disabled={subestado !== null}
+                    onPress={() => setDropdownAbierto(!dropdownAbierto)}
                     style={{
                       flexDirection: 'row',
                       justifyContent: 'space-between',
@@ -392,9 +392,11 @@ export default function PedidoScreen({ navigation, route }: Props) {
                     }}>
                       {subestado ?? 'Seleccionar Sub Estado'}
                     </Text>
-                    {subestado
-                      ? <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                      : <Ionicons name={dropdownAbierto ? 'chevron-up' : 'chevron-down'} size={20} color="#6B7280" />
+                    {dropdownAbierto
+                      ? <Ionicons name="chevron-up" size={20} color="#6B7280" />
+                      : subestado
+                        ? <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                        : <Ionicons name="chevron-down" size={20} color="#6B7280" />
                     }
                   </TouchableOpacity>
 
@@ -412,6 +414,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
                         <TouchableOpacity
                           key={opcion}
                           onPress={() => {
+                            if (opcion !== subestado) setEvidencias(undefined);
                             setSubestado(opcion);
                             setDropdownAbierto(false);
                           }}
