@@ -129,13 +129,28 @@ function EstadoBtn({ estado, current, onPress }: {
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function PedidoScreen({ navigation, route }: Props) {
-  const { pedido } = route.params;
+  const { pedido, formularioCompletado, estadoRetorno, subestadoRetorno, modoEdicion } = route.params;
+  const pruebasCompletadas = formularioCompletado === true;
   const detalle = DEFAULT_DETALLE;
   const insets = useSafeAreaInsets();
 
   const [tabActiva, setTabActiva] = useState<'gestion' | 'info'>('gestion');
-  const [estado, setEstado] = useState<EstadoPedido>(pedido.estado);
-  const [subestado, setSubestado] = useState<string | null>(null);
+
+  // Al volver del formulario, restaurar estado/subestado desde params.
+  // En modoEdicion (Finalizados), el pedido ya trae el estado confirmado.
+  const [estado, setEstado] = useState<EstadoPedido>(() => {
+    if (formularioCompletado && estadoRetorno) return estadoRetorno;
+    return pedido.estado;
+  });
+  const [subestado, setSubestado] = useState<string | null>(() => {
+    if (formularioCompletado && subestadoRetorno !== undefined) return subestadoRetorno;
+    // modoEdicion: auto-seleccionar primer subestado disponible
+    if (modoEdicion) {
+      const opciones = SUBESTADOS[pedido.estado] ?? [];
+      return opciones.length > 0 ? opciones[0] : null;
+    }
+    return null;
+  });
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
 
   const esEntregado = estado === 'entregado';
@@ -146,7 +161,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
     estado !== 'pendiente' &&
     (tieneSubestados ? subestado !== null : true);
 
-  const puedeConfirmar = false;
+  const puedeConfirmar = estadoCompletado && pruebasCompletadas;
 
   const handleSetEstado = (nuevo: EstadoPedido) => {
     setEstado(nuevo);
@@ -172,7 +187,16 @@ export default function PedidoScreen({ navigation, route }: Props) {
   };
 
   const handleConfirmar = () => {
-    Alert.alert('Confirmar gestión', `Estado: ${ESTADO_CONFIG[estado].label}${subestado ? ` — ${subestado}` : ''}`);
+    if (modoEdicion) {
+      // Pedido ya finalizado — guardar cambios en backend (integración pendiente)
+      Alert.alert('Guardado', 'Los datos de entrega han sido actualizados.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } else {
+      navigation.navigate('Entregas', {
+        pedidoGestionado: { key: pedido.key, nuevoEstado: estado, subestado },
+      });
+    }
   };
 
   return (
@@ -337,28 +361,36 @@ export default function PedidoScreen({ navigation, route }: Props) {
 
             {/* Pruebas de entrega — activo solo cuando Estado está completo */}
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={() => estadoCompletado && navigation.navigate('FormularioEntrega', { estado, subestado, pedidoCodigo: pedido.codigo, pedido })}
               disabled={!estadoCompletado}
               style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: pruebasCompletadas ? '#F0FDF4' : '#FFFFFF',
                 borderRadius: 12,
                 padding: 16,
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 borderWidth: 1.5,
-                borderColor: estadoCompletado ? colors.primary : '#E5E7EB',
+                borderColor: pruebasCompletadas ? '#10B981' : estadoCompletado ? colors.primary : '#E5E7EB',
                 marginTop: 16,
                 opacity: estadoCompletado ? 1 : 0.4,
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="camera-outline" size={20} color={estadoCompletado ? colors.primary : '#9CA3AF'} style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: 14, color: estadoCompletado ? colors.primary : '#9CA3AF', fontWeight: '700' }}>
+                <Ionicons
+                  name="camera-outline"
+                  size={20}
+                  color={pruebasCompletadas ? '#10B981' : estadoCompletado ? colors.primary : '#9CA3AF'}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={{ fontSize: 14, fontWeight: '700', color: pruebasCompletadas ? '#10B981' : estadoCompletado ? colors.primary : '#9CA3AF' }}>
                   Pruebas de entrega
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={estadoCompletado ? colors.primary : '#9CA3AF'} />
+              {pruebasCompletadas
+                ? <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                : <Ionicons name="chevron-forward" size={20} color={estadoCompletado ? colors.primary : '#9CA3AF'} />
+              }
             </TouchableOpacity>
 
           </View>
@@ -533,7 +565,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
               fontWeight: '600',
               color: '#FFFFFF',
             }}>
-              Confirmar gestión
+              {modoEdicion ? 'Guardar cambios' : 'Confirmar gestión'}
             </Text>
           </TouchableOpacity>
         </View>

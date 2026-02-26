@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -208,11 +208,24 @@ function SyncIndicator({ synced }: { synced: boolean }) {
 }
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
-export default function EntregasScreen({ navigation }: Props) {
+export default function EntregasScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const [tabActiva, setTabActiva] = useState<'enruta' | 'finalizados'>('enruta');
   const [pendientes, setPendientes] = useState<PedidoConEstado[]>(INIT_PENDIENTES);
-  const finalizados = INIT_FINALIZADOS;
+  const [finalizados, setFinalizados] = useState<PedidoConEstado[]>(INIT_FINALIZADOS);
+
+  // Procesar pedido confirmado cuando se navega de vuelta desde PedidoScreen
+  useEffect(() => {
+    const pg = route.params?.pedidoGestionado;
+    if (!pg) return;
+    setPendientes(prev => {
+      const pedido = prev.find(p => p.key === pg.key);
+      if (!pedido) return prev;
+      setFinalizados(fin => [...fin, { ...pedido, estado: pg.nuevoEstado }]);
+      setTabActiva('enruta');
+      return prev.filter(p => p.key !== pg.key);
+    });
+  }, [route.params?.pedidoGestionado]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // ── Búsqueda ─────────────────────────────────────────────────────────────────
@@ -473,7 +486,11 @@ export default function EntregasScreen({ navigation }: Props) {
               {/* Contenido */}
               <TouchableOpacity
                 style={{ flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 4 }}
-                onPress={() => navigation.navigate('Pedido', { pedido: item })}
+                onPress={() => navigation.navigate('Pedido', {
+                  pedido: item,
+                  formularioCompletado: tabActiva === 'finalizados' ? true : undefined,
+                  modoEdicion: tabActiva === 'finalizados' ? true : undefined,
+                })}
                 activeOpacity={0.7}
               >
 

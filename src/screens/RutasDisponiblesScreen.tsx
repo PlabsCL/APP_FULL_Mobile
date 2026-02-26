@@ -22,8 +22,9 @@ export type RootStackParamList = {
   Ruta: { ruta: Ruta };
   Confirmar: { ruta: Ruta; totalGuias: number };
   Configuracion: undefined;
-  Entregas: { ruta: Ruta; totalGuias: number };
-  Pedido: { pedido: PedidoConEstado };
+  Entregas: { ruta?: Ruta; totalGuias?: number; pedidoGestionado?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; subestado?: string | null } };
+  Pedido: { pedido: PedidoConEstado; formularioCompletado?: boolean; estadoRetorno?: import('../types/pedido').EstadoPedido; subestadoRetorno?: string | null; modoEdicion?: boolean };
+  FormularioEntrega: { estado: import('../types/pedido').EstadoPedido; subestado?: string | null; pedidoCodigo: string; pedido: PedidoConEstado };
 };
 
 type Props = {
