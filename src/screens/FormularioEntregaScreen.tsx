@@ -39,15 +39,33 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
   const { estado, subestado: subestadoInicial, pedidoCodigo, pedido, evidenciasIniciales } = route.params;
   const insets = useSafeAreaInsets();
 
+  const esEntregado = estado === 'entregado';
+  const totalPasos  = esEntregado ? 6 : 2;
+
   const [paso, setPaso] = useState(1);
-  const [comentarios, setComentarios]   = useState(evidenciasIniciales?.comentarios ?? '');
-  const [fotosLugar, setFotosLugar]     = useState<string[]>(evidenciasIniciales?.fotosLugar ?? []);
   const [inputFocused, setInputFocused] = useState(false);
 
+  // ─── Estado para flujo Entregado (6 pasos) ────────────────────────────────
+  const [nombreReceptor, setNombreReceptor] = useState(evidenciasIniciales?.nombreReceptor ?? '');
+  const [rutReceptor, setRutReceptor]       = useState(evidenciasIniciales?.rutReceptor ?? '');
+  const [fotos, setFotos]                   = useState<string[]>(evidenciasIniciales?.fotos ?? []);
+  const [fotosLugar, setFotosLugar]         = useState<string[]>(evidenciasIniciales?.fotosLugar ?? []);
+  const [fotosPOD, setFotosPOD]             = useState<string[]>(evidenciasIniciales?.fotosPOD ?? []);
+  const [metodoPago, setMetodoPago]         = useState(evidenciasIniciales?.metodoPago ?? '');
+
+  // ─── Estado para flujo simple (2 pasos) ──────────────────────────────────
+  const [comentarios, setComentarios] = useState(evidenciasIniciales?.comentarios ?? '');
+
   // ─── Lógica de avance ─────────────────────────────────────────────────────
-  const puedeAvanzar =
-    paso === 1 ? comentarios.trim().length > 0 :
-    fotosLugar.length > 0;
+  const puedeAvanzar = esEntregado
+    ? paso === 1 ? nombreReceptor.trim().length > 0
+    : paso === 2 ? rutReceptor.trim().length > 0
+    : paso === 3 ? fotos.length > 0
+    : paso === 4 ? fotosLugar.length > 0
+    : paso === 5 ? fotosPOD.length > 0
+    : metodoPago.trim().length > 0
+    : paso === 1 ? comentarios.trim().length > 0
+    : fotosLugar.length > 0;
 
   const handleAnterior = () => {
     if (paso === 1) {
@@ -60,24 +78,29 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
 
   const handleSiguiente = () => {
     if (!puedeAvanzar) return;
-    if (paso < 2) {
+    if (paso < totalPasos) {
       setPaso(paso + 1);
       setInputFocused(false);
     } else {
-      // Paso 2 completado → volver a PedidoScreen restaurando estado, subestado y evidencias
+      const evidenciasRetorno = esEntregado
+        ? { nombreReceptor, rutReceptor, fotos, fotosLugar, fotosPOD, metodoPago }
+        : { comentarios, fotosLugar };
       navigation.navigate('Pedido', {
         pedido,
         formularioCompletado: true,
         estadoRetorno: estado,
         subestadoRetorno: subestadoInicial ?? null,
-        evidenciasRetorno: { comentarios, fotosLugar },
+        evidenciasRetorno,
       });
     }
   };
 
   // ─── Cámara ───────────────────────────────────────────────────────────────
   const abrirCamara = async () => {
-    if (fotosLugar.length >= MAX_FOTOS) return;
+    const arrayActual = esEntregado
+      ? (paso === 3 ? fotos : paso === 4 ? fotosLugar : fotosPOD)
+      : fotosLugar;
+    if (arrayActual.length >= MAX_FOTOS) return;
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -92,13 +115,106 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setFotosLugar(prev => [...prev, result.assets[0].uri]);
+      const uri = result.assets[0].uri;
+      if (esEntregado) {
+        if (paso === 3) setFotos(prev => [...prev, uri]);
+        else if (paso === 4) setFotosLugar(prev => [...prev, uri]);
+        else setFotosPOD(prev => [...prev, uri]);
+      } else {
+        setFotosLugar(prev => [...prev, uri]);
+      }
     }
   };
 
-  const eliminarFotoLugar = (index: number) => {
-    setFotosLugar(prev => prev.filter((_, i) => i !== index));
-  };
+  // ─── Helpers fotos ────────────────────────────────────────────────────────
+  const eliminarFoto      = (i: number) => setFotos(prev => prev.filter((_, j) => j !== i));
+  const eliminarFotoLugar = (i: number) => setFotosLugar(prev => prev.filter((_, j) => j !== i));
+  const eliminarFotoPOD   = (i: number) => setFotosPOD(prev => prev.filter((_, j) => j !== i));
+
+  // ─── Render foto grid ─────────────────────────────────────────────────────
+  const renderFotoGrid = (uris: string[], onDelete: (i: number) => void, count: number) => (
+    <>
+      <TouchableOpacity
+        onPress={abrirCamara}
+        disabled={uris.length >= MAX_FOTOS}
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 12,
+          borderWidth: 1.5,
+          borderColor: uris.length < MAX_FOTOS ? colors.primary : '#E5E7EB',
+          paddingVertical: 14,
+          alignItems: 'center',
+          marginBottom: 20,
+          opacity: uris.length < MAX_FOTOS ? 1 : 0.4,
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: '600', color: uris.length < MAX_FOTOS ? colors.primary : '#9CA3AF' }}>
+          Abrir cámara
+        </Text>
+      </TouchableOpacity>
+
+      {uris.length > 0 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {uris.map((uri, index) => (
+            <View key={index} style={{ width: THUMB_SIZE, height: THUMB_SIZE }}>
+              <Image source={{ uri }} style={{ width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 8 }} />
+              <TouchableOpacity
+                onPress={() => onDelete(index)}
+                style={{
+                  position: 'absolute', top: -6, right: -6,
+                  backgroundColor: colors.primary, borderRadius: 12,
+                  width: 22, height: 22, justifyContent: 'center', alignItems: 'center',
+                }}
+              >
+                <Ionicons name="close" size={14} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center' }}>
+        Imágenes a enviar: {count} / {MAX_FOTOS}
+      </Text>
+    </>
+  );
+
+  // ─── Render de campo de texto ─────────────────────────────────────────────
+  const renderCampoTexto = (
+    value: string,
+    onChangeText: (t: string) => void,
+    placeholder: string,
+    keyboardType: 'default' | 'email-address' = 'default',
+    multiline = false,
+  ) => (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      onFocus={() => setInputFocused(true)}
+      onBlur={() => setInputFocused(false)}
+      placeholder={placeholder}
+      placeholderTextColor="#9CA3AF"
+      autoFocus
+      multiline={multiline}
+      numberOfLines={multiline ? 4 : 1}
+      underlineColorAndroid="transparent"
+      cursorColor={colors.warning}
+      selectionColor={colors.warning}
+      keyboardType={keyboardType}
+      textAlignVertical={multiline ? 'top' : 'auto'}
+      style={{
+        fontSize: 16,
+        color: '#1F2937',
+        borderBottomWidth: multiline ? 0 : 2,
+        borderWidth: multiline ? 1.5 : 0,
+        borderColor: inputFocused || value ? colors.warning : '#E5E7EB',
+        borderRadius: multiline ? 8 : 0,
+        paddingVertical: multiline ? 12 : 8,
+        paddingHorizontal: multiline ? 12 : 0,
+        minHeight: multiline ? 100 : undefined,
+      }}
+    />
+  );
 
   // ─── Render de pasos ──────────────────────────────────────────────────────
   const renderPaso = () => {
@@ -108,102 +224,89 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
       </Text>
     );
 
-    // Paso 1: Comentarios
-    if (paso === 1) {
+    // ── Flujo Entregado (6 pasos) ──
+    if (esEntregado) {
+      if (paso === 1) return (
+        <>
+          {labelEstado}
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
+            Nombre de{'\n'}Receptor
+          </Text>
+          {renderCampoTexto(nombreReceptor, setNombreReceptor, 'Ingresa el nombre')}
+        </>
+      );
+
+      if (paso === 2) return (
+        <>
+          {labelEstado}
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
+            RUT
+          </Text>
+          {renderCampoTexto(rutReceptor, setRutReceptor, 'Ej: 12345678-9')}
+        </>
+      );
+
+      if (paso === 3) return (
+        <>
+          {labelEstado}
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
+            Fotografía Cédula{'\n'}de Identidad
+          </Text>
+          {renderFotoGrid(fotos, eliminarFoto, fotos.length)}
+        </>
+      );
+
+      if (paso === 4) return (
+        <>
+          {labelEstado}
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
+            Fotografía de Lugar
+          </Text>
+          {renderFotoGrid(fotosLugar, eliminarFotoLugar, fotosLugar.length)}
+        </>
+      );
+
+      if (paso === 5) return (
+        <>
+          {labelEstado}
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
+            Fotografía de POD
+          </Text>
+          {renderFotoGrid(fotosPOD, eliminarFotoPOD, fotosPOD.length)}
+        </>
+      );
+
+      // paso === 6
       return (
         <>
           {labelEstado}
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
-            Comentarios
+            Tarjeta/Efectivo
           </Text>
-          <TextInput
-            value={comentarios}
-            onChangeText={setComentarios}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            placeholder="Agrega un comentario sobre la entrega…"
-            placeholderTextColor="#9CA3AF"
-            autoFocus
-            multiline
-            numberOfLines={4}
-            underlineColorAndroid="transparent"
-            cursorColor={colors.warning}
-            selectionColor={colors.warning}
-            style={{
-              fontSize: 16,
-              color: '#1F2937',
-              borderWidth: 1.5,
-              borderColor: inputFocused || comentarios ? colors.warning : '#E5E7EB',
-              borderRadius: 8,
-              paddingVertical: 12,
-              paddingHorizontal: 12,
-              minHeight: 100,
-              textAlignVertical: 'top',
-            }}
-          />
+          {renderCampoTexto(metodoPago, setMetodoPago, 'Ej: Tarjeta, Efectivo, Transferencia…')}
         </>
       );
     }
 
-    // Paso 2: Fotografía del lugar
+    // ── Flujo simple (2 pasos: entrega_parcial / no_entregado) ──
+    if (paso === 1) return (
+      <>
+        {labelEstado}
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
+          Comentarios
+        </Text>
+        {renderCampoTexto(comentarios, setComentarios, 'Agrega un comentario sobre la entrega…', 'default', true)}
+      </>
+    );
+
+    // paso === 2
     return (
       <>
         {labelEstado}
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
           Fotografía de Lugar
         </Text>
-
-        <TouchableOpacity
-          onPress={abrirCamara}
-          disabled={fotosLugar.length >= MAX_FOTOS}
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 12,
-            borderWidth: 1.5,
-            borderColor: fotosLugar.length < MAX_FOTOS ? colors.primary : '#E5E7EB',
-            paddingVertical: 14,
-            alignItems: 'center',
-            marginBottom: 20,
-            opacity: fotosLugar.length < MAX_FOTOS ? 1 : 0.4,
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: '600', color: fotosLugar.length < MAX_FOTOS ? colors.primary : '#9CA3AF' }}>
-            Abrir cámara
-          </Text>
-        </TouchableOpacity>
-
-        {fotosLugar.length > 0 && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-            {fotosLugar.map((uri, index) => (
-              <View key={index} style={{ width: THUMB_SIZE, height: THUMB_SIZE }}>
-                <Image
-                  source={{ uri }}
-                  style={{ width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 8 }}
-                />
-                <TouchableOpacity
-                  onPress={() => eliminarFotoLugar(index)}
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    backgroundColor: colors.primary,
-                    borderRadius: 12,
-                    width: 22,
-                    height: 22,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons name="close" size={14} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center' }}>
-          Imágenes a enviar: {fotosLugar.length} / {MAX_FOTOS}
-        </Text>
+        {renderFotoGrid(fotosLugar, eliminarFotoLugar, fotosLugar.length)}
       </>
     );
   };
@@ -249,7 +352,7 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
         </Text>
       </View>
 
-      {/* ── KAV: empuja el footer sobre el teclado ───────────────────────────── */}
+      {/* ── KAV ─────────────────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
