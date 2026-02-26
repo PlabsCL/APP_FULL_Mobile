@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -152,6 +152,16 @@ export default function PedidoScreen({ navigation, route }: Props) {
     return null;
   });
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
+
+  // Si el componente ya estaba montado y los params cambian (formulario completado),
+  // sincronizar estado/subestado desde los params (cubre el caso de no-remount).
+  useEffect(() => {
+    if (formularioCompletado && estadoRetorno) {
+      setEstado(estadoRetorno);
+      setSubestado(subestadoRetorno ?? null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formularioCompletado]);
 
   const esEntregado = estado === 'entregado';
   const subestadosDisponibles = SUBESTADOS[estado] ?? [];
