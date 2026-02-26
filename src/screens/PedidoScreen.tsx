@@ -260,16 +260,9 @@ export default function PedidoScreen({ navigation, route }: Props) {
   };
 
   const handleConfirmar = () => {
-    if (modoEdicion) {
-      // Pedido ya finalizado — guardar cambios en backend (integración pendiente)
-      Alert.alert('Guardado', 'Los datos de entrega han sido actualizados.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    } else {
-      navigation.navigate('Entregas', {
-        pedidoGestionado: { key: pedido.key, nuevoEstado: estado, subestado, evidencias },
-      });
-    }
+    navigation.navigate('Entregas', {
+      pedidoGestionado: { _id: Date.now(), key: pedido.key, nuevoEstado: estado, subestado, evidencias },
+    });
   };
 
   return (
