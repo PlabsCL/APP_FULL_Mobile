@@ -40,22 +40,14 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
 
   const [paso, setPaso] = useState(1);
-  const [nombreReceptor, setNombreReceptor] = useState(evidenciasIniciales?.nombreReceptor ?? '');
-  const [rutReceptor, setRutReceptor]       = useState(evidenciasIniciales?.rutReceptor ?? '');
-  const [metodoPago, setMetodoPago]         = useState(evidenciasIniciales?.metodoPago ?? '');
-  const [fotos, setFotos]                   = useState<string[]>(evidenciasIniciales?.fotos ?? []);
-  const [fotosLugar, setFotosLugar]         = useState<string[]>(evidenciasIniciales?.fotosLugar ?? []);
-  const [fotosPOD, setFotosPOD]             = useState<string[]>(evidenciasIniciales?.fotosPOD ?? []);
-  const [inputFocused, setInputFocused]     = useState(false);
+  const [comentarios, setComentarios]   = useState(evidenciasIniciales?.comentarios ?? '');
+  const [fotosLugar, setFotosLugar]     = useState<string[]>(evidenciasIniciales?.fotosLugar ?? []);
+  const [inputFocused, setInputFocused] = useState(false);
 
   // ─── Lógica de avance ─────────────────────────────────────────────────────
   const puedeAvanzar =
-    paso === 1 ? nombreReceptor.trim().length > 0 :
-    paso === 2 ? rutReceptor.trim().length > 0 :
-    paso === 3 ? fotos.length > 0 :
-    paso === 4 ? fotosLugar.length > 0 :
-    paso === 5 ? fotosPOD.length > 0 :
-    metodoPago.trim().length > 0;
+    paso === 1 ? comentarios.trim().length > 0 :
+    fotosLugar.length > 0;
 
   const handleAnterior = () => {
     if (paso === 1) {
@@ -68,25 +60,24 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
 
   const handleSiguiente = () => {
     if (!puedeAvanzar) return;
-    if (paso < 6) {
+    if (paso < 2) {
       setPaso(paso + 1);
       setInputFocused(false);
     } else {
-      // Paso 6 completado → volver a PedidoScreen restaurando estado, subestado y evidencias
+      // Paso 2 completado → volver a PedidoScreen restaurando estado, subestado y evidencias
       navigation.navigate('Pedido', {
         pedido,
         formularioCompletado: true,
         estadoRetorno: estado,
         subestadoRetorno: subestadoInicial ?? null,
-        evidenciasRetorno: { nombreReceptor, rutReceptor, fotos, fotosLugar, fotosPOD, metodoPago },
+        evidenciasRetorno: { comentarios, fotosLugar },
       });
     }
   };
 
   // ─── Cámara ───────────────────────────────────────────────────────────────
   const abrirCamara = async () => {
-    const arrayActual = paso === 3 ? fotos : paso === 4 ? fotosLugar : fotosPOD;
-    if (arrayActual.length >= MAX_FOTOS) return;
+    if (fotosLugar.length >= MAX_FOTOS) return;
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -101,27 +92,12 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
     });
 
     if (!result.canceled && result.assets[0]) {
-      const uri = result.assets[0].uri;
-      if (paso === 3) {
-        setFotos(prev => [...prev, uri]);
-      } else if (paso === 4) {
-        setFotosLugar(prev => [...prev, uri]);
-      } else {
-        setFotosPOD(prev => [...prev, uri]);
-      }
+      setFotosLugar(prev => [...prev, result.assets[0].uri]);
     }
-  };
-
-  const eliminarFoto = (index: number) => {
-    setFotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const eliminarFotoLugar = (index: number) => {
     setFotosLugar(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const eliminarFotoPOD = (index: number) => {
-    setFotosPOD(prev => prev.filter((_, i) => i !== index));
   };
 
   // ─── Render de pasos ──────────────────────────────────────────────────────
@@ -132,143 +108,51 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
       </Text>
     );
 
+    // Paso 1: Comentarios
     if (paso === 1) {
       return (
         <>
           {labelEstado}
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
-            Nombre de{'\n'}Receptor
+            Comentarios
           </Text>
           <TextInput
-            value={nombreReceptor}
-            onChangeText={setNombreReceptor}
+            value={comentarios}
+            onChangeText={setComentarios}
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
-            placeholder="Ingresa el nombre"
+            placeholder="Agrega un comentario sobre la entrega…"
             placeholderTextColor="#9CA3AF"
             autoFocus
+            multiline
+            numberOfLines={4}
             underlineColorAndroid="transparent"
             cursorColor={colors.warning}
             selectionColor={colors.warning}
             style={{
               fontSize: 16,
               color: '#1F2937',
-              borderBottomWidth: 2,
-              borderBottomColor: inputFocused || nombreReceptor ? colors.warning : '#E5E7EB',
-              paddingVertical: 8,
-              paddingHorizontal: 0,
+              borderWidth: 1.5,
+              borderColor: inputFocused || comentarios ? colors.warning : '#E5E7EB',
+              borderRadius: 8,
+              paddingVertical: 12,
+              paddingHorizontal: 12,
+              minHeight: 100,
+              textAlignVertical: 'top',
             }}
           />
         </>
       );
     }
 
-    if (paso === 2) {
-      return (
-        <>
-          {labelEstado}
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
-            RUT
-          </Text>
-          <TextInput
-            value={rutReceptor}
-            onChangeText={setRutReceptor}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            placeholder="Ej: 12345678-9"
-            placeholderTextColor="#9CA3AF"
-            autoFocus
-            underlineColorAndroid="transparent"
-            cursorColor={colors.warning}
-            selectionColor={colors.warning}
-            keyboardType="default"
-            style={{
-              fontSize: 16,
-              color: '#1F2937',
-              borderBottomWidth: 2,
-              borderBottomColor: inputFocused || rutReceptor ? colors.warning : '#E5E7EB',
-              paddingVertical: 8,
-              paddingHorizontal: 0,
-            }}
-          />
-        </>
-      );
-    }
-
-    // Paso 3: Fotografía Cédula de Identidad
-    if (paso === 3) return (
-      <>
-        {labelEstado}
-        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
-          Fotografía Cédula{'\n'}de Identidad
-        </Text>
-
-        {/* Botón Abrir cámara */}
-        <TouchableOpacity
-          onPress={abrirCamara}
-          disabled={fotos.length >= MAX_FOTOS}
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 12,
-            borderWidth: 1.5,
-            borderColor: fotos.length < MAX_FOTOS ? colors.primary : '#E5E7EB',
-            paddingVertical: 14,
-            alignItems: 'center',
-            marginBottom: 20,
-            opacity: fotos.length < MAX_FOTOS ? 1 : 0.4,
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: '600', color: fotos.length < MAX_FOTOS ? colors.primary : '#9CA3AF' }}>
-            Abrir cámara
-          </Text>
-        </TouchableOpacity>
-
-        {/* Grid de thumbnails */}
-        {fotos.length > 0 && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-            {fotos.map((uri, index) => (
-              <View key={index} style={{ width: THUMB_SIZE, height: THUMB_SIZE }}>
-                <Image
-                  source={{ uri }}
-                  style={{ width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 8 }}
-                />
-                <TouchableOpacity
-                  onPress={() => eliminarFoto(index)}
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    backgroundColor: colors.primary,
-                    borderRadius: 12,
-                    width: 22,
-                    height: 22,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons name="close" size={14} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Contador */}
-        <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center' }}>
-          Imágenes a enviar: {fotos.length} / {MAX_FOTOS}
-        </Text>
-      </>
-    );
-
-    // Paso 4: Fotografía de Lugar
-    if (paso === 4) return (
+    // Paso 2: Fotografía del lugar
+    return (
       <>
         {labelEstado}
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
           Fotografía de Lugar
         </Text>
 
-        {/* Botón Abrir cámara */}
         <TouchableOpacity
           onPress={abrirCamara}
           disabled={fotosLugar.length >= MAX_FOTOS}
@@ -288,7 +172,6 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
           </Text>
         </TouchableOpacity>
 
-        {/* Grid de thumbnails */}
         {fotosLugar.length > 0 && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
             {fotosLugar.map((uri, index) => (
@@ -318,103 +201,8 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        {/* Contador */}
         <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center' }}>
           Imágenes a enviar: {fotosLugar.length} / {MAX_FOTOS}
-        </Text>
-      </>
-    );
-
-    // Paso 6: Método de Pago
-    if (paso === 6) {
-      return (
-        <>
-          {labelEstado}
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
-            Tarjeta/Efectivo
-          </Text>
-          <TextInput
-            value={metodoPago}
-            onChangeText={setMetodoPago}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            placeholder="Ej: Tarjeta, Efectivo, Transferencia…"
-            placeholderTextColor="#9CA3AF"
-            autoFocus
-            underlineColorAndroid="transparent"
-            cursorColor={colors.warning}
-            selectionColor={colors.warning}
-            style={{
-              fontSize: 16,
-              color: '#1F2937',
-              borderBottomWidth: 2,
-              borderBottomColor: inputFocused || metodoPago ? colors.warning : '#E5E7EB',
-              paddingVertical: 8,
-              paddingHorizontal: 0,
-            }}
-          />
-        </>
-      );
-    }
-
-    // Paso 5: Fotografía de POD
-    return (
-      <>
-        {labelEstado}
-        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 24 }}>
-          Fotografía de POD
-        </Text>
-
-        <TouchableOpacity
-          onPress={abrirCamara}
-          disabled={fotosPOD.length >= MAX_FOTOS}
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 12,
-            borderWidth: 1.5,
-            borderColor: fotosPOD.length < MAX_FOTOS ? colors.primary : '#E5E7EB',
-            paddingVertical: 14,
-            alignItems: 'center',
-            marginBottom: 20,
-            opacity: fotosPOD.length < MAX_FOTOS ? 1 : 0.4,
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: '600', color: fotosPOD.length < MAX_FOTOS ? colors.primary : '#9CA3AF' }}>
-            Abrir cámara
-          </Text>
-        </TouchableOpacity>
-
-        {fotosPOD.length > 0 && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-            {fotosPOD.map((uri, index) => (
-              <View key={index} style={{ width: THUMB_SIZE, height: THUMB_SIZE }}>
-                <Image
-                  source={{ uri }}
-                  style={{ width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 8 }}
-                />
-                <TouchableOpacity
-                  onPress={() => eliminarFotoPOD(index)}
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    backgroundColor: colors.primary,
-                    borderRadius: 12,
-                    width: 22,
-                    height: 22,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons name="close" size={14} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center' }}>
-          Imágenes a enviar: {fotosPOD.length} / {MAX_FOTOS}
         </Text>
       </>
     );
