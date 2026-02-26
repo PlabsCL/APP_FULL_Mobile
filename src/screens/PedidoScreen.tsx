@@ -265,7 +265,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } else {
-      navigation.navigate('Entregas', {
+      (navigation as any).popTo('Entregas', {
         pedidoGestionado: { key: pedido.key, nuevoEstado: estado, subestado, evidencias },
       });
     }
