@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
 import DrawerMenu from '../components/DrawerMenu';
@@ -14,10 +17,26 @@ const driverName = 'Pablo Lara';
 
 interface HomeScreenProps {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
+  route: RouteProp<RootStackParamList, 'Home'>;
 }
 
-export default function HomeScreen({ navigation }: HomeScreenProps) {
+export default function HomeScreen({ navigation, route }: HomeScreenProps) {
+  const insets = useSafeAreaInsets();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // ── Banner "Ruta finalizada exitosamente" ─────────────────────────────────
+  const bannerAnim = useRef(new Animated.Value(0)).current;
+  const rutaFinalizada = route.params?.rutaFinalizada === true;
+
+  useEffect(() => {
+    if (!rutaFinalizada) return;
+    Animated.timing(bannerAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
+    const t = setTimeout(() => {
+      Animated.timing(bannerAnim, { toValue: 0, duration: 400, useNativeDriver: true }).start();
+    }, 3500);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rutaFinalizada]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -76,6 +95,33 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onClose={() => setDrawerOpen(false)}
         navigation={navigation}
       />
+
+      {/* ── Banner: Ruta finalizada exitosamente ─────────────────────────── */}
+      {rutaFinalizada && (
+        <Animated.View style={{
+          position: 'absolute',
+          bottom: insets.bottom || 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#10B981',
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          flexDirection: 'row',
+          alignItems: 'center',
+          opacity: bannerAnim,
+          transform: [{
+            translateY: bannerAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [40, 0],
+            }),
+          }],
+        }}>
+          <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" style={{ marginRight: 10 }} />
+          <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>
+            Ruta finalizada exitosamente
+          </Text>
+        </Animated.View>
+      )}
 
     </SafeAreaView>
   );

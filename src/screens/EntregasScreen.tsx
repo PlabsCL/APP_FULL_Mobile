@@ -277,6 +277,32 @@ export default function EntregasScreen({ navigation, route }: Props) {
     });
   };
 
+  // ── Finalizar ruta ───────────────────────────────────────────────────────────
+  const [modalFinalizar, setModalFinalizar] = useState(false);
+  const [progreso, setProgreso] = useState(0);
+  const [sincronizadoCompleto, setSincronizadoCompleto] = useState(false);
+  const intervaloRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleIniciarSincronizacion = () => {
+    setModalFinalizar(true);
+    setProgreso(0);
+    setSincronizadoCompleto(false);
+    let p = 0;
+    intervaloRef.current = setInterval(() => {
+      p += 2;
+      setProgreso(p);
+      if (p >= 100) {
+        if (intervaloRef.current) clearInterval(intervaloRef.current);
+        setSincronizadoCompleto(true);
+      }
+    }, 50); // 50ms × 50 pasos = 2.5 segundos
+  };
+
+  const handleFinalizarRuta = () => {
+    setModalFinalizar(false);
+    (navigation as any).popTo('Home', { rutaFinalizada: true });
+  };
+
   // ── Búsqueda ─────────────────────────────────────────────────────────────────
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -523,12 +549,55 @@ export default function EntregasScreen({ navigation, route }: Props) {
 
       {/* ── Lista ───────────────────────────────────────────────────────────── */}
       <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} scrollEnabled={scrollEnabled}>
-        {listaActiva.length === 0 && (
+
+        {/* Estado vacío: sin resultados de búsqueda */}
+        {listaActiva.length === 0 && searchQuery.trim().length > 0 && (
           <View style={{ padding: 40, alignItems: 'center' }}>
             <Ionicons name="search-outline" size={40} color="#D1D5DB" />
             <Text style={{ color: '#9CA3AF', marginTop: 12, fontSize: 14 }}>
               Sin resultados para "{searchQuery}"
             </Text>
+          </View>
+        )}
+
+        {/* Estado vacío: todos los pedidos gestionados */}
+        {pendientes.length === 0 && tabActiva === 'enruta' && !searchQuery.trim() && (
+          <View style={{ flex: 1, alignItems: 'center', paddingTop: 80, paddingHorizontal: 32 }}>
+            <Ionicons name="checkmark-done-circle-outline" size={80} color={colors.primary} style={{ opacity: 0.25 }} />
+            <Text style={{
+              fontSize: 20,
+              fontWeight: '700',
+              color: '#1F2937',
+              textAlign: 'center',
+              marginTop: 24,
+              lineHeight: 28,
+            }}>
+              ¡Completaste todos{'\n'}los despachos!
+            </Text>
+            <Text style={{
+              fontSize: 14,
+              color: '#6B7280',
+              textAlign: 'center',
+              marginTop: 10,
+              lineHeight: 20,
+            }}>
+              Puedes finalizar la ruta para sincronizar los resultados con el servidor.
+            </Text>
+            <TouchableOpacity
+              onPress={handleIniciarSincronizacion}
+              style={{
+                marginTop: 32,
+                backgroundColor: colors.warning,
+                borderRadius: 12,
+                paddingVertical: 15,
+                paddingHorizontal: 40,
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 }}>
+                Finalizar ruta
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -889,6 +958,87 @@ export default function EntregasScreen({ navigation, route }: Props) {
             >
               <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '600' }}>Cancelar</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modal: Finalizar ruta ────────────────────────────────────────────── */}
+      <Modal
+        visible={modalFinalizar}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !sincronizadoCompleto && setModalFinalizar(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.55)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingHorizontal: 24,
+        }}>
+          <View style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            width: '100%',
+            padding: 28,
+            alignItems: 'center',
+          }}>
+            {!sincronizadoCompleto ? (
+              <>
+                <Ionicons name="cloud-upload-outline" size={48} color={colors.primary} style={{ marginBottom: 16 }} />
+                <Text style={{ fontSize: 17, fontWeight: '700', color: '#1F2937', marginBottom: 6 }}>
+                  Sincronizando ruta
+                </Text>
+                <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 24, textAlign: 'center' }}>
+                  Enviando {finalizados.length} gestiones al servidor…
+                </Text>
+                {/* Barra de progreso */}
+                <View style={{
+                  width: '100%',
+                  height: 10,
+                  backgroundColor: '#E5E7EB',
+                  borderRadius: 5,
+                  overflow: 'hidden',
+                  marginBottom: 10,
+                }}>
+                  <View style={{
+                    width: `${progreso}%`,
+                    height: '100%',
+                    backgroundColor: colors.primary,
+                    borderRadius: 5,
+                  }} />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
+                  {progreso}%
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle" size={56} color="#10B981" style={{ marginBottom: 16 }} />
+                <Text style={{ fontSize: 17, fontWeight: '700', color: '#1F2937', marginBottom: 6 }}>
+                  ¡Sincronización completa!
+                </Text>
+                <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 28, textAlign: 'center' }}>
+                  Todos los datos han sido enviados correctamente.
+                </Text>
+                <TouchableOpacity
+                  onPress={handleFinalizarRuta}
+                  style={{
+                    backgroundColor: colors.warning,
+                    borderRadius: 10,
+                    paddingVertical: 14,
+                    paddingHorizontal: 40,
+                    width: '100%',
+                    alignItems: 'center',
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                    Finalizar ruta
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>

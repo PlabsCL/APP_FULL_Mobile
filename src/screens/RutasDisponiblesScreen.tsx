@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // ─── Tipos de navegación ──────────────────────────────────────────────────────
 export type RootStackParamList = {
-  Home: undefined;
+  Home: { rutaFinalizada?: boolean } | undefined;
   RutasDisponibles: undefined;
   Vehiculos: { ruta: Ruta };
   Ruta: { ruta: Ruta };
@@ -162,11 +162,21 @@ export default function RutasDisponiblesScreen({ navigation }: Props) {
       </View>
 
       {/* ── Lista de rutas ──────────────────────────────────────────────────── */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={rutas.length === 0
+          ? { flex: 1, padding: 16 }
+          : { padding: 16 }
+        }
+      >
         {rutas.length === 0 ? (
-          <View style={{ marginTop: 60, alignItems: 'center' }}>
-            <Text style={{ color: colors.textSecondary, fontSize: 16 }}>
-              No hay rutas para este día
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 }}>
+            <Ionicons name="map-outline" size={64} color={colors.border} style={{ marginBottom: 20 }} />
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textSecondary, marginBottom: 8, textAlign: 'center' }}>
+              Sin rutas disponibles
+            </Text>
+            <Text style={{ fontSize: 14, color: colors.border, textAlign: 'center', lineHeight: 20 }}>
+              No hay rutas asignadas{'\n'}para esta fecha
             </Text>
           </View>
         ) : (
