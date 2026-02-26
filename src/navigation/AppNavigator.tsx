@@ -12,6 +12,8 @@ import ConfiguracionScreen from '../screens/ConfiguracionScreen';
 import EntregasScreen from '../screens/EntregasScreen';
 import PedidoScreen from '../screens/PedidoScreen';
 import FormularioEntregaScreen from '../screens/FormularioEntregaScreen';
+import BulkEntregaScreen from '../screens/BulkEntregaScreen';
+import BulkFormularioEntregaScreen from '../screens/BulkFormularioEntregaScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -75,6 +77,16 @@ export default function AppNavigator() {
         <Stack.Screen
           name="FormularioEntrega"
           component={FormularioEntregaScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BulkEntrega"
+          component={BulkEntregaScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BulkFormulario"
+          component={BulkFormularioEntregaScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

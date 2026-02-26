@@ -115,8 +115,10 @@ async function openMapForPedido(pedido: PedidoConEstado) {
 }
 
 // ─── Item deslizable hacia la derecha ────────────────────────────────────────
-function SwipeableItem({ children, onSwipeRight }: { children: React.ReactNode; onSwipeRight: () => void }) {
+function SwipeableItem({ children, onSwipeRight, disabled }: { children: React.ReactNode; onSwipeRight: () => void; disabled?: boolean }) {
   const translateX = useRef(new Animated.Value(0)).current;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
 
   // El fondo solo aparece cuando hay desplazamiento (evita que se vea en gaps entre items)
   const bgOpacity = translateX.interpolate({
@@ -127,7 +129,7 @@ function SwipeableItem({ children, onSwipeRight }: { children: React.ReactNode; 
 
   const panResponder = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_, gs) =>
-      Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && gs.dx > 0,
+      !disabledRef.current && Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && gs.dx > 0,
     onPanResponderMove: (_, gs) => {
       if (gs.dx > 0) translateX.setValue(Math.min(gs.dx, 90));
     },
@@ -233,6 +235,28 @@ export default function EntregasScreen({ navigation, route }: Props) {
       return prev.filter(p => p.key !== pg.key);
     });
   }, [route.params?.pedidoGestionado]);
+
+  // Procesar pedidos gestionados en bulk al volver desde BulkEntregaScreen
+  useEffect(() => {
+    const bulk = route.params?.pedidosGestionadosBulk;
+    if (!bulk || bulk.length === 0) return;
+    const bulkMap = new Map(bulk.map(b => [b.key, b]));
+    setPendientes(prev => {
+      const aFinalizar = prev.filter(p => bulkMap.has(p.key));
+      if (aFinalizar.length === 0) return prev;
+      setFinalizados(fin => [
+        ...aFinalizar.map(p => {
+          const b = bulkMap.get(p.key)!;
+          return { ...p, estado: b.nuevoEstado, evidencias: b.evidencias };
+        }),
+        ...fin,
+      ]);
+      setModoSeleccion(false);
+      setSeleccionados(new Set());
+      return prev.filter(p => !bulkMap.has(p.key));
+    });
+  }, [route.params?.pedidosGestionadosBulk]);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // ── Selección bulk ───────────────────────────────────────────────────────────
@@ -427,11 +451,23 @@ export default function EntregasScreen({ navigation, route }: Props) {
 
           {/* Selección bulk */}
           <TouchableOpacity
-            onPress={toggleModoSeleccion}
+            onPress={modoSeleccion && seleccionados.size > 0
+              ? () => {
+                  const pedidosSeleccionados = pendientes.filter(p => seleccionados.has(p.key));
+                  navigation.navigate('BulkEntrega', { pedidos: pedidosSeleccionados });
+                }
+              : toggleModoSeleccion
+            }
             style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
           >
             <Ionicons
-              name={modoSeleccion ? 'close-circle-outline' : 'checkbox-outline'}
+              name={
+                modoSeleccion && seleccionados.size > 0
+                  ? 'arrow-forward-circle-outline'
+                  : modoSeleccion
+                  ? 'close-circle-outline'
+                  : 'checkbox-outline'
+              }
               size={22}
               color={modoSeleccion ? colors.warning : colors.text}
             />
@@ -502,7 +538,7 @@ export default function EntregasScreen({ navigation, route }: Props) {
           const leftColor = ESTADO_COLOR[item.estado];
 
           return (
-            <SwipeableItem key={item.key} onSwipeRight={() => openMapForPedido(item)}>
+            <SwipeableItem key={item.key} onSwipeRight={() => openMapForPedido(item)} disabled={modoSeleccion}>
             <Animated.View
               style={{
                 backgroundColor: '#FFFFFF',
