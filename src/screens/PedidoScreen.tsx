@@ -86,6 +86,42 @@ const SUBESTADOS: Partial<Record<EstadoPedido, string[]>> = {
     'Sector Peligroso Cambiar Dirección',
     'Sin Moradores',
   ],
+  no_entregado: [
+    'Cambia Direccion de Entrega',
+    'Cliente Comprara en Sucursal',
+    'Cliente no de Acuerdo con el Monto Facturado',
+    'Cliente se Arrepiente de Compra',
+    'Contacto no Conocido en Destino',
+    'Desiste por Retraso en la Entrega',
+    'Dirección Errónea',
+    'Direccion Fuera Cobertura Entrega',
+    'Direccion no Encontrada',
+    'Fraude',
+    'Negocio se Encuentra Duplicado',
+    'No Acepta Modalidad Pago Contraentrega',
+    'Prefiere Otra Compañía',
+    'Producto Dañado',
+    'Producto Extraviado',
+    'Productos no Corresponden a Solicitados',
+    'RC - Cliente se arrepiente de compra',
+    'RC - Demora en la entrega',
+    'RC - Diferencias en Monto de pago',
+    'RC - No Cumplimiento Protocolos de Entrega',
+    'RC - Oferta no corresponde a lo solicitado',
+    'RC - Producto no solicitado',
+    'RT - Cliente no encontrado - inubicable',
+    'RT - Dirección errónea',
+    'RT - Fuera Cobertura Transporte',
+    'RT - Otra Región - Comuna',
+    'RT - Pedido incompleto',
+    'RT - Producto extraviado',
+    'RT - Rechazo por Deuda Portabilidad',
+    'RT - Sin Código Autenticación',
+    'RT - Sin Documentos o Vencidos',
+    'RT - Solicitado por Seguridad',
+    'Sector Peligroso Cambiar Direccion',
+    'Sin Morador',
+  ],
 };
 
 // ─── Fila de dato ─────────────────────────────────────────────────────────────
@@ -185,11 +221,12 @@ export default function PedidoScreen({ navigation, route }: Props) {
 
   const esEntregado      = estado === 'entregado';
   const esEntregaParcial = estado === 'entrega_parcial';
-  // Color activo según estado — verde para entregado, amarillo para entrega_parcial
-  const colorActivo = esEntregado ? '#10B981' : esEntregaParcial ? '#F59E0B' : null;
-  const bgActivo    = esEntregado ? '#F0FDF4' : esEntregaParcial ? '#FFFBEB' : '#FFFFFF';
+  const esNoEntregado    = estado === 'no_entregado';
+  // Color activo según estado — verde, amarillo o rojo
+  const colorActivo = esEntregado ? '#10B981' : esEntregaParcial ? '#F59E0B' : esNoEntregado ? '#EF4444' : null;
+  const bgActivo    = esEntregado ? '#F0FDF4' : esEntregaParcial ? '#FFFBEB' : esNoEntregado ? '#FEF2F2' : '#FFFFFF';
   const iconActivo: React.ComponentProps<typeof Ionicons>['name'] | null =
-    (esEntregado || esEntregaParcial) ? 'checkmark-circle' : null;
+    (esEntregado || esEntregaParcial || esNoEntregado) ? 'checkmark-circle' : null;
 
   const subestadosDisponibles = SUBESTADOS[estado] ?? [];
   const tieneSubestados = subestadosDisponibles.length > 0;
