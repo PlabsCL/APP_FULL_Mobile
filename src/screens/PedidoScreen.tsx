@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   ScrollView,
   Linking,
@@ -72,9 +73,19 @@ const ESTADO_CONFIG: Record<EstadoPedido, { color: string; label: string; icon: 
 // Botones visibles en la pantalla (orden de imagen)
 const ESTADOS_BOTONES: EstadoPedido[] = ['no_entregado', 'entrega_parcial', 'entregado'];
 
-// SubEstados por estado (sin buscador)
+// SubEstados por estado
 const SUBESTADOS: Partial<Record<EstadoPedido, string[]>> = {
   entregado: ['Entrega Exitosa'],
+  entrega_parcial: [
+    'Postergado a Peticion del Cliente',
+    'Contacto no disponible',
+    'Monto a Recaudar no Disponible',
+    'Sector Peligroso Cambiar Dirección',
+    'Cliente sin Visitar',
+    'No se Carga a Transporte',
+    'Full - Frecuencia',
+    'Sin Moradores',
+  ],
 };
 
 // ─── Fila de dato ─────────────────────────────────────────────────────────────
@@ -157,6 +168,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
     return undefined;
   });
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
+  const [busquedaSubestado, setBusquedaSubestado] = useState('');
 
   // Si el componente ya estaba montado y los params cambian (formulario completado),
   // sincronizar estado/subestado/evidencias desde los params (cubre el caso de no-remount).
@@ -171,9 +183,19 @@ export default function PedidoScreen({ navigation, route }: Props) {
 
   const pruebasCompletadas = evidencias !== undefined;
 
-  const esEntregado = estado === 'entregado';
+  const esEntregado      = estado === 'entregado';
+  const esEntregaParcial = estado === 'entrega_parcial';
+  // Color activo según estado — verde para entregado, amarillo para entrega_parcial
+  const colorActivo = esEntregado ? '#10B981' : esEntregaParcial ? '#F59E0B' : null;
+  const bgActivo    = esEntregado ? '#F0FDF4' : esEntregaParcial ? '#FFFBEB' : '#FFFFFF';
+  const iconActivo: React.ComponentProps<typeof Ionicons>['name'] | null =
+    esEntregado ? 'checkmark-circle' : esEntregaParcial ? 'remove-circle' : null;
+
   const subestadosDisponibles = SUBESTADOS[estado] ?? [];
   const tieneSubestados = subestadosDisponibles.length > 0;
+  const subestadosFiltrados = busquedaSubestado.trim()
+    ? subestadosDisponibles.filter(s => s.toLowerCase().includes(busquedaSubestado.toLowerCase()))
+    : subestadosDisponibles;
 
   const estadoCompletado =
     estado !== 'pendiente' &&
@@ -185,6 +207,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
     setEstado(nuevo);
     setSubestado(null);
     setDropdownAbierto(false);
+    setBusquedaSubestado('');
   };
 
   const handleLlamar = () => {
@@ -277,22 +300,22 @@ export default function PedidoScreen({ navigation, route }: Props) {
         {tabActiva === 'gestion' && (
           <View style={{ padding: 16 }}>
 
-            {/* ── Tarjeta Estado (se tiñe verde si entregado) ── */}
+            {/* ── Tarjeta Estado — se tiñe según estado activo ── */}
             <View style={{
-              backgroundColor: esEntregado ? '#F0FDF4' : '#FFFFFF',
+              backgroundColor: bgActivo,
               borderRadius: 12,
               padding: 16,
               marginBottom: 16,
-              borderWidth: esEntregado ? 1.5 : 0,
-              borderColor: esEntregado ? '#10B981' : 'transparent',
+              borderWidth: colorActivo ? 1.5 : 0,
+              borderColor: colorActivo ?? 'transparent',
             }}>
               {/* Título + ícono confirmación */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontSize: 14, color: esEntregado ? '#10B981' : '#6B7280', fontWeight: '700' }}>
+                <Text style={{ fontSize: 14, color: colorActivo ?? '#6B7280', fontWeight: '700' }}>
                   Estado
                 </Text>
-                {esEntregado && (
-                  <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                {iconActivo && (
+                  <Ionicons name={iconActivo} size={24} color={colorActivo!} />
                 )}
               </View>
 
@@ -324,27 +347,27 @@ export default function PedidoScreen({ navigation, route }: Props) {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       borderWidth: 1.5,
-                      borderColor: subestado ? '#10B981' : '#D1D5DB',
+                      borderColor: subestado ? colorActivo! : '#D1D5DB',
                       borderRadius: 8,
                       paddingHorizontal: 14,
                       paddingVertical: 12,
-                      backgroundColor: subestado ? '#F0FDF4' : '#FFFFFF',
+                      backgroundColor: subestado ? bgActivo : '#FFFFFF',
                     }}
                   >
                     <Text style={{
                       fontSize: 14,
-                      color: subestado ? '#10B981' : '#9CA3AF',
+                      color: subestado ? colorActivo! : '#9CA3AF',
                       fontWeight: subestado ? '600' : '400',
                     }}>
                       {subestado ?? 'Seleccionar Sub Estado'}
                     </Text>
                     {subestado
-                      ? <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                      ? <Ionicons name="checkmark-circle" size={20} color={colorActivo!} />
                       : <Ionicons name={dropdownAbierto ? 'chevron-up' : 'chevron-down'} size={20} color="#6B7280" />
                     }
                   </TouchableOpacity>
 
-                  {/* Lista de opciones (sin buscador) */}
+                  {/* Lista de opciones con buscador (visible cuando hay más de 3 subestados) */}
                   {dropdownAbierto && (
                     <View style={{
                       backgroundColor: '#FFFFFF',
@@ -354,12 +377,32 @@ export default function PedidoScreen({ navigation, route }: Props) {
                       marginTop: 4,
                       overflow: 'hidden',
                     }}>
-                      {subestadosDisponibles.map((opcion) => (
+                      {subestadosDisponibles.length > 3 && (
+                        <View style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: '#F3F4F6',
+                        }}>
+                          <Ionicons name="search-outline" size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
+                          <TextInput
+                            value={busquedaSubestado}
+                            onChangeText={setBusquedaSubestado}
+                            placeholder="Buscar subestado"
+                            placeholderTextColor="#9CA3AF"
+                            style={{ flex: 1, fontSize: 14, color: '#1F2937', paddingVertical: 2 }}
+                          />
+                        </View>
+                      )}
+                      {subestadosFiltrados.map((opcion) => (
                         <TouchableOpacity
                           key={opcion}
                           onPress={() => {
                             setSubestado(opcion);
                             setDropdownAbierto(false);
+                            setBusquedaSubestado('');
                           }}
                           style={{
                             paddingHorizontal: 14,
@@ -570,7 +613,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
             onPress={handleConfirmar}
             disabled={!puedeConfirmar}
             style={{
-              backgroundColor: puedeConfirmar ? '#10B981' : '#D1D5DB',
+              backgroundColor: puedeConfirmar ? (colorActivo ?? '#10B981') : '#D1D5DB',
               borderRadius: 12,
               paddingVertical: 16,
               alignItems: 'center',
