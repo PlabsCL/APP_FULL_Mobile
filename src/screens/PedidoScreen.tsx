@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   Linking,
@@ -204,7 +203,6 @@ export default function PedidoScreen({ navigation, route }: Props) {
     return undefined;
   });
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
-  const [busquedaSubestado, setBusquedaSubestado] = useState('');
 
   // Si el componente ya estaba montado y los params cambian (formulario completado),
   // sincronizar estado/subestado/evidencias desde los params (cubre el caso de no-remount).
@@ -230,9 +228,6 @@ export default function PedidoScreen({ navigation, route }: Props) {
 
   const subestadosDisponibles = SUBESTADOS[estado] ?? [];
   const tieneSubestados = subestadosDisponibles.length > 0;
-  const subestadosFiltrados = busquedaSubestado.trim()
-    ? subestadosDisponibles.filter(s => s.toLowerCase().includes(busquedaSubestado.toLowerCase()))
-    : subestadosDisponibles;
 
   const estadoCompletado =
     estado !== 'pendiente' &&
@@ -244,7 +239,6 @@ export default function PedidoScreen({ navigation, route }: Props) {
     setEstado(nuevo);
     setSubestado(null);
     setDropdownAbierto(false);
-    setBusquedaSubestado('');
   };
 
   const handleLlamar = () => {
@@ -404,7 +398,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
                     }
                   </TouchableOpacity>
 
-                  {/* Lista de opciones con buscador (visible cuando hay más de 3 subestados) */}
+                  {/* Lista de opciones */}
                   {dropdownAbierto && (
                     <View style={{
                       backgroundColor: '#FFFFFF',
@@ -414,32 +408,12 @@ export default function PedidoScreen({ navigation, route }: Props) {
                       marginTop: 4,
                       overflow: 'hidden',
                     }}>
-                      {subestadosDisponibles.length > 3 && (
-                        <View style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          paddingHorizontal: 12,
-                          paddingVertical: 8,
-                          borderBottomWidth: 1,
-                          borderBottomColor: '#F3F4F6',
-                        }}>
-                          <Ionicons name="search-outline" size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
-                          <TextInput
-                            value={busquedaSubestado}
-                            onChangeText={setBusquedaSubestado}
-                            placeholder="Buscar subestado"
-                            placeholderTextColor="#9CA3AF"
-                            style={{ flex: 1, fontSize: 14, color: '#1F2937', paddingVertical: 2 }}
-                          />
-                        </View>
-                      )}
-                      {subestadosFiltrados.map((opcion) => (
+                      {subestadosDisponibles.map((opcion) => (
                         <TouchableOpacity
                           key={opcion}
                           onPress={() => {
                             setSubestado(opcion);
                             setDropdownAbierto(false);
-                            setBusquedaSubestado('');
                           }}
                           style={{
                             paddingHorizontal: 14,
