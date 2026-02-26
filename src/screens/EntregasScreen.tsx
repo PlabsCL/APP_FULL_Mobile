@@ -218,36 +218,20 @@ export default function EntregasScreen({ navigation, route }: Props) {
   const [pendientes, setPendientes] = useState<PedidoConEstado[]>(INIT_PENDIENTES);
   const [finalizados, setFinalizados] = useState<PedidoConEstado[]>(INIT_FINALIZADOS);
 
-  // Ref siempre apunta al último estado de pendientes (evita closures obsoletos)
-  const pendientesRef = useRef(pendientes);
-  pendientesRef.current = pendientes;
-  // Evita re-procesar el mismo pedidoGestionado si el componente re-renderiza
-  const lastPgIdRef = useRef<number>(0);
-
   // Procesar pedido confirmado cuando se navega de vuelta desde PedidoScreen
   useEffect(() => {
     const pg = route.params?.pedidoGestionado;
-    if (!pg || pg._id === lastPgIdRef.current) return;
-    lastPgIdRef.current = pg._id;
-
-    const enPendientes = pendientesRef.current.find(p => p.key === pg.key);
-
-    if (enPendientes) {
-      // Pendiente → Finalizado
-      setPendientes(prev => prev.filter(p => p.key !== pg.key));
-      setFinalizados(prev => [
-        { ...enPendientes, estado: pg.nuevoEstado, subestado: pg.subestado ?? undefined, evidencias: pg.evidencias },
-        ...prev,
+    if (!pg) return;
+    setPendientes(prev => {
+      const pedido = prev.find(p => p.key === pg.key);
+      if (!pedido) return prev;
+      setFinalizados(fin => [
+        { ...pedido, estado: pg.nuevoEstado, subestado: pg.subestado, evidencias: pg.evidencias },
+        ...fin,
       ]);
       setTabActiva('enruta');
-    } else {
-      // Actualizar en Finalizados (modoEdicion)
-      setFinalizados(prev => prev.map(p =>
-        p.key === pg.key
-          ? { ...p, estado: pg.nuevoEstado, subestado: pg.subestado ?? undefined, evidencias: pg.evidencias }
-          : p
-      ));
-    }
+      return prev.filter(p => p.key !== pg.key);
+    });
   }, [route.params?.pedidoGestionado]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
