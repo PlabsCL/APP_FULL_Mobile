@@ -9,6 +9,10 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Artefactos de npm/expo install (archivos vacíos generados)
+delivery-driver@1.0.0
+expo
+
 # Native
 .kotlin/
 *.orig.*
