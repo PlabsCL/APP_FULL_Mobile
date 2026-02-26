@@ -77,13 +77,13 @@ const ESTADOS_BOTONES: EstadoPedido[] = ['no_entregado', 'entrega_parcial', 'ent
 const SUBESTADOS: Partial<Record<EstadoPedido, string[]>> = {
   entregado: ['Entrega Exitosa'],
   entrega_parcial: [
-    'Postergado a Peticion del Cliente',
-    'Contacto no disponible',
-    'Monto a Recaudar no Disponible',
-    'Sector Peligroso Cambiar Dirección',
     'Cliente sin Visitar',
-    'No se Carga a Transporte',
+    'Contacto no disponible',
     'Full - Frecuencia',
+    'Monto a Recaudar no Disponible',
+    'No se Carga a Transporte',
+    'Postergado a Peticion del Cliente',
+    'Sector Peligroso Cambiar Dirección',
     'Sin Moradores',
   ],
 };
@@ -189,7 +189,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
   const colorActivo = esEntregado ? '#10B981' : esEntregaParcial ? '#F59E0B' : null;
   const bgActivo    = esEntregado ? '#F0FDF4' : esEntregaParcial ? '#FFFBEB' : '#FFFFFF';
   const iconActivo: React.ComponentProps<typeof Ionicons>['name'] | null =
-    esEntregado ? 'checkmark-circle' : esEntregaParcial ? 'remove-circle' : null;
+    (esEntregado || esEntregaParcial) ? 'checkmark-circle' : null;
 
   const subestadosDisponibles = SUBESTADOS[estado] ?? [];
   const tieneSubestados = subestadosDisponibles.length > 0;
@@ -315,7 +315,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
                   Estado
                 </Text>
                 {iconActivo && (
-                  <Ionicons name={iconActivo} size={24} color={colorActivo!} />
+                  <Ionicons name={iconActivo} size={24} color="#10B981" />
                 )}
               </View>
 
@@ -362,7 +362,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
                       {subestado ?? 'Seleccionar Sub Estado'}
                     </Text>
                     {subestado
-                      ? <Ionicons name="checkmark-circle" size={20} color={colorActivo!} />
+                      ? <Ionicons name="checkmark-circle" size={20} color="#10B981" />
                       : <Ionicons name={dropdownAbierto ? 'chevron-up' : 'chevron-down'} size={20} color="#6B7280" />
                     }
                   </TouchableOpacity>
@@ -425,14 +425,14 @@ export default function PedidoScreen({ navigation, route }: Props) {
               onPress={() => estadoCompletado && navigation.navigate('FormularioEntrega', { estado, subestado, pedidoCodigo: pedido.codigo, pedido, evidenciasIniciales: evidencias })}
               disabled={!estadoCompletado}
               style={{
-                backgroundColor: pruebasCompletadas ? '#F0FDF4' : '#FFFFFF',
+                backgroundColor: pruebasCompletadas ? bgActivo : '#FFFFFF',
                 borderRadius: 12,
                 padding: 16,
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 borderWidth: 1.5,
-                borderColor: pruebasCompletadas ? '#10B981' : estadoCompletado ? colors.primary : '#E5E7EB',
+                borderColor: pruebasCompletadas ? (colorActivo ?? '#10B981') : estadoCompletado ? colors.primary : '#E5E7EB',
                 marginTop: 16,
                 opacity: estadoCompletado ? 1 : 0.4,
               }}
@@ -441,10 +441,10 @@ export default function PedidoScreen({ navigation, route }: Props) {
                 <Ionicons
                   name="camera-outline"
                   size={20}
-                  color={pruebasCompletadas ? '#10B981' : estadoCompletado ? colors.primary : '#9CA3AF'}
+                  color={pruebasCompletadas ? (colorActivo ?? '#10B981') : estadoCompletado ? colors.primary : '#9CA3AF'}
                   style={{ marginRight: 8 }}
                 />
-                <Text style={{ fontSize: 14, fontWeight: '700', color: pruebasCompletadas ? '#10B981' : estadoCompletado ? colors.primary : '#9CA3AF' }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: pruebasCompletadas ? (colorActivo ?? '#10B981') : estadoCompletado ? colors.primary : '#9CA3AF' }}>
                   Pruebas de entrega
                 </Text>
               </View>
