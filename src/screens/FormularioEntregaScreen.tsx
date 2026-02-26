@@ -34,10 +34,19 @@ const ESTADO_LABEL: Partial<Record<EstadoPedido, string>> = {
 const MAX_FOTOS = 10;
 const THUMB_SIZE = 90;
 
+// Color de acento según estado
+function colorDeEstado(estado: EstadoPedido): string {
+  if (estado === 'entregado')      return '#10B981';
+  if (estado === 'entrega_parcial') return '#F59E0B';
+  if (estado === 'no_entregado')   return '#EF4444';
+  return '#F59E0B'; // fallback
+}
+
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function FormularioEntregaScreen({ navigation, route }: Props) {
   const { estado, subestado: subestadoInicial, pedidoCodigo, pedido, bulkPedidos, returnScreen, evidenciasIniciales } = route.params;
   const insets = useSafeAreaInsets();
+  const colorActivo = colorDeEstado(estado);
 
   const [paso, setPaso] = useState(1);
   const [comentarios, setComentarios]   = useState(evidenciasIniciales?.comentarios ?? '');
@@ -113,7 +122,7 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
   // ─── Render de pasos ──────────────────────────────────────────────────────
   const renderPaso = () => {
     const labelEstado = (
-      <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 4 }}>
+      <Text style={{ fontSize: 13, color: colorActivo, fontWeight: '600', marginBottom: 4 }}>
         {ESTADO_LABEL[estado] ?? estado}
       </Text>
     );
@@ -137,13 +146,13 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
             multiline
             numberOfLines={4}
             underlineColorAndroid="transparent"
-            cursorColor={colors.warning}
-            selectionColor={colors.warning}
+            cursorColor={colorActivo}
+            selectionColor={colorActivo}
             style={{
               fontSize: 16,
               color: '#1F2937',
               borderWidth: 1.5,
-              borderColor: inputFocused || comentarios ? colors.warning : '#E5E7EB',
+              borderColor: inputFocused || comentarios ? colorActivo : '#E5E7EB',
               borderRadius: 8,
               paddingVertical: 12,
               paddingHorizontal: 12,
@@ -170,14 +179,14 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
             backgroundColor: '#FFFFFF',
             borderRadius: 12,
             borderWidth: 1.5,
-            borderColor: fotosLugar.length < MAX_FOTOS ? colors.primary : '#E5E7EB',
+            borderColor: fotosLugar.length < MAX_FOTOS ? colorActivo : '#E5E7EB',
             paddingVertical: 14,
             alignItems: 'center',
             marginBottom: 20,
             opacity: fotosLugar.length < MAX_FOTOS ? 1 : 0.4,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: '600', color: fotosLugar.length < MAX_FOTOS ? colors.primary : '#9CA3AF' }}>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: fotosLugar.length < MAX_FOTOS ? colorActivo : '#9CA3AF' }}>
             Abrir cámara
           </Text>
         </TouchableOpacity>
@@ -196,7 +205,7 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
                     position: 'absolute',
                     top: -6,
                     right: -6,
-                    backgroundColor: colors.primary,
+                    backgroundColor: colorActivo,
                     borderRadius: 12,
                     width: 22,
                     height: 22,
@@ -227,14 +236,14 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
     justifyContent: 'center' as const,
     minHeight: 52,
     borderWidth: 1.5,
-    borderColor: activo ? colors.primary : '#E5E7EB',
+    borderColor: activo ? colorActivo : '#E5E7EB',
     opacity: activo ? 1 : 0.4,
   });
 
   const btnTextStyle = (activo: boolean) => ({
     fontSize: 17,
     fontWeight: '700' as const,
-    color: activo ? colors.primary : '#9CA3AF',
+    color: activo ? colorActivo : '#9CA3AF',
   });
 
   return (
