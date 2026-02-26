@@ -205,13 +205,17 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
       style={{
         fontSize: 16,
         color: '#1F2937',
-        borderBottomWidth: multiline ? 0 : 2,
-        borderWidth: multiline ? 1.5 : 0,
-        borderColor: inputFocused || value ? colors.primary : '#E5E7EB',
-        borderRadius: multiline ? 8 : 0,
         paddingVertical: multiline ? 12 : 8,
         paddingHorizontal: multiline ? 12 : 0,
-        minHeight: multiline ? 100 : undefined,
+        ...(multiline ? {
+          borderWidth: 1.5,
+          borderColor: inputFocused || value ? colors.primary : '#E5E7EB',
+          borderRadius: 8,
+          minHeight: 100,
+        } : {
+          borderBottomWidth: 2,
+          borderBottomColor: inputFocused || value ? colors.primary : '#E5E7EB',
+        }),
       }}
     />
   );
