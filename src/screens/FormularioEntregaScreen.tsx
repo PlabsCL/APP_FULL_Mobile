@@ -36,7 +36,7 @@ const THUMB_SIZE = 90;
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function FormularioEntregaScreen({ navigation, route }: Props) {
-  const { estado, subestado: subestadoInicial, pedidoCodigo, pedido, evidenciasIniciales } = route.params;
+  const { estado, subestado: subestadoInicial, pedidoCodigo, pedido, bulkPedidos, returnScreen, evidenciasIniciales } = route.params;
   const insets = useSafeAreaInsets();
 
   const [paso, setPaso] = useState(1);
@@ -64,14 +64,24 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
       setPaso(paso + 1);
       setInputFocused(false);
     } else {
-      // Paso 2 completado → volver a PedidoScreen restaurando estado, subestado y evidencias
-      navigation.navigate('Pedido', {
-        pedido,
-        formularioCompletado: true,
-        estadoRetorno: estado,
-        subestadoRetorno: subestadoInicial ?? null,
-        evidenciasRetorno: { comentarios, fotosLugar },
-      });
+      // Paso 2 completado → volver a la pantalla origen con evidencias
+      if (returnScreen === 'BulkGestion') {
+        navigation.navigate('BulkGestion', {
+          pedidos: bulkPedidos!,
+          formularioCompletado: true,
+          estadoRetorno: estado,
+          subestadoRetorno: subestadoInicial ?? null,
+          evidenciasRetorno: { comentarios, fotosLugar },
+        });
+      } else {
+        navigation.navigate('Pedido', {
+          pedido: pedido!,
+          formularioCompletado: true,
+          estadoRetorno: estado,
+          subestadoRetorno: subestadoInicial ?? null,
+          evidenciasRetorno: { comentarios, fotosLugar },
+        });
+      }
     }
   };
 

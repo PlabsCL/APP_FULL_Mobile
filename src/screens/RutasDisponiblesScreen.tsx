@@ -22,9 +22,15 @@ export type RootStackParamList = {
   Ruta: { ruta: Ruta };
   Confirmar: { ruta: Ruta; totalGuias: number };
   Configuracion: undefined;
-  Entregas: { ruta?: Ruta; totalGuias?: number; pedidoGestionado?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; subestado?: string | null; evidencias?: import('../types/pedido').EvidenciasFormulario } };
+  Entregas: {
+    ruta?: Ruta;
+    totalGuias?: number;
+    pedidoGestionado?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; subestado?: string | null; evidencias?: import('../types/pedido').EvidenciasFormulario };
+    pedidosBulkGestionados?: { keys: string[]; nuevoEstado: import('../types/pedido').EstadoPedido; subestado?: string | null; evidencias?: import('../types/pedido').EvidenciasFormulario };
+  };
   Pedido: { pedido: PedidoConEstado; formularioCompletado?: boolean; estadoRetorno?: import('../types/pedido').EstadoPedido; subestadoRetorno?: string | null; modoEdicion?: boolean; evidenciasRetorno?: import('../types/pedido').EvidenciasFormulario };
-  FormularioEntrega: { estado: import('../types/pedido').EstadoPedido; subestado?: string | null; pedidoCodigo: string; pedido: PedidoConEstado; evidenciasIniciales?: import('../types/pedido').EvidenciasFormulario };
+  FormularioEntrega: { estado: import('../types/pedido').EstadoPedido; subestado?: string | null; pedidoCodigo: string; pedido?: PedidoConEstado; bulkPedidos?: PedidoConEstado[]; returnScreen?: 'Pedido' | 'BulkGestion'; evidenciasIniciales?: import('../types/pedido').EvidenciasFormulario };
+  BulkGestion: { pedidos: PedidoConEstado[]; formularioCompletado?: boolean; estadoRetorno?: import('../types/pedido').EstadoPedido; subestadoRetorno?: string | null; evidenciasRetorno?: import('../types/pedido').EvidenciasFormulario };
 };
 
 type Props = {
