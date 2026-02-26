@@ -36,16 +36,16 @@ const THUMB_SIZE = 90;
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function FormularioEntregaScreen({ navigation, route }: Props) {
-  const { estado, subestado: subestadoInicial, pedidoCodigo, pedido } = route.params;
+  const { estado, subestado: subestadoInicial, pedidoCodigo, pedido, evidenciasIniciales } = route.params;
   const insets = useSafeAreaInsets();
 
   const [paso, setPaso] = useState(1);
-  const [nombreReceptor, setNombreReceptor] = useState('');
-  const [rutReceptor, setRutReceptor]       = useState('');
-  const [metodoPago, setMetodoPago]         = useState('');
-  const [fotos, setFotos]                   = useState<string[]>([]);
-  const [fotosLugar, setFotosLugar]         = useState<string[]>([]);
-  const [fotosPOD, setFotosPOD]             = useState<string[]>([]);
+  const [nombreReceptor, setNombreReceptor] = useState(evidenciasIniciales?.nombreReceptor ?? '');
+  const [rutReceptor, setRutReceptor]       = useState(evidenciasIniciales?.rutReceptor ?? '');
+  const [metodoPago, setMetodoPago]         = useState(evidenciasIniciales?.metodoPago ?? '');
+  const [fotos, setFotos]                   = useState<string[]>(evidenciasIniciales?.fotos ?? []);
+  const [fotosLugar, setFotosLugar]         = useState<string[]>(evidenciasIniciales?.fotosLugar ?? []);
+  const [fotosPOD, setFotosPOD]             = useState<string[]>(evidenciasIniciales?.fotosPOD ?? []);
   const [inputFocused, setInputFocused]     = useState(false);
 
   // ─── Lógica de avance ─────────────────────────────────────────────────────
@@ -72,12 +72,13 @@ export default function FormularioEntregaScreen({ navigation, route }: Props) {
       setPaso(paso + 1);
       setInputFocused(false);
     } else {
-      // Paso 6 completado → volver a PedidoScreen restaurando estado y subestado
+      // Paso 6 completado → volver a PedidoScreen restaurando estado, subestado y evidencias
       navigation.navigate('Pedido', {
         pedido,
         formularioCompletado: true,
         estadoRetorno: estado,
         subestadoRetorno: subestadoInicial ?? null,
+        evidenciasRetorno: { nombreReceptor, rutReceptor, fotos, fotosLugar, fotosPOD, metodoPago },
       });
     }
   };

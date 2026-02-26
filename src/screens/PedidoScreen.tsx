@@ -13,7 +13,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { RootStackParamList } from './RutasDisponiblesScreen';
-import { EstadoPedido, PedidoConEstado } from '../types/pedido';
+import { EstadoPedido, EvidenciasFormulario, PedidoConEstado } from '../types/pedido';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface Props {
@@ -129,8 +129,7 @@ function EstadoBtn({ estado, current, onPress }: {
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function PedidoScreen({ navigation, route }: Props) {
-  const { pedido, formularioCompletado, estadoRetorno, subestadoRetorno, modoEdicion } = route.params;
-  const pruebasCompletadas = formularioCompletado === true;
+  const { pedido, formularioCompletado, estadoRetorno, subestadoRetorno, modoEdicion, evidenciasRetorno } = route.params;
   const detalle = DEFAULT_DETALLE;
   const insets = useSafeAreaInsets();
 
@@ -144,24 +143,33 @@ export default function PedidoScreen({ navigation, route }: Props) {
   });
   const [subestado, setSubestado] = useState<string | null>(() => {
     if (formularioCompletado && subestadoRetorno !== undefined) return subestadoRetorno;
-    // modoEdicion: auto-seleccionar primer subestado disponible
+    // modoEdicion: usar subestado guardado en el pedido, o auto-seleccionar el primero
     if (modoEdicion) {
+      if (pedido.subestado !== undefined) return pedido.subestado;
       const opciones = SUBESTADOS[pedido.estado] ?? [];
       return opciones.length > 0 ? opciones[0] : null;
     }
     return null;
   });
+  const [evidencias, setEvidencias] = useState<EvidenciasFormulario | undefined>(() => {
+    if (evidenciasRetorno) return evidenciasRetorno;
+    if (modoEdicion) return pedido.evidencias;
+    return undefined;
+  });
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
 
   // Si el componente ya estaba montado y los params cambian (formulario completado),
-  // sincronizar estado/subestado desde los params (cubre el caso de no-remount).
+  // sincronizar estado/subestado/evidencias desde los params (cubre el caso de no-remount).
   useEffect(() => {
     if (formularioCompletado && estadoRetorno) {
       setEstado(estadoRetorno);
       setSubestado(subestadoRetorno ?? null);
+      if (evidenciasRetorno) setEvidencias(evidenciasRetorno);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formularioCompletado]);
+
+  const pruebasCompletadas = evidencias !== undefined;
 
   const esEntregado = estado === 'entregado';
   const subestadosDisponibles = SUBESTADOS[estado] ?? [];
@@ -204,7 +212,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
       ]);
     } else {
       navigation.navigate('Entregas', {
-        pedidoGestionado: { key: pedido.key, nuevoEstado: estado, subestado },
+        pedidoGestionado: { key: pedido.key, nuevoEstado: estado, subestado, evidencias },
       });
     }
   };
@@ -371,7 +379,7 @@ export default function PedidoScreen({ navigation, route }: Props) {
 
             {/* Pruebas de entrega — activo solo cuando Estado está completo */}
             <TouchableOpacity
-              onPress={() => estadoCompletado && navigation.navigate('FormularioEntrega', { estado, subestado, pedidoCodigo: pedido.codigo, pedido })}
+              onPress={() => estadoCompletado && navigation.navigate('FormularioEntrega', { estado, subestado, pedidoCodigo: pedido.codigo, pedido, evidenciasIniciales: evidencias })}
               disabled={!estadoCompletado}
               style={{
                 backgroundColor: pruebasCompletadas ? '#F0FDF4' : '#FFFFFF',

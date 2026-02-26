@@ -32,16 +32,20 @@ interface Props {
 
 // ─── Colores y etiquetas por estado ──────────────────────────────────────────
 const ESTADO_COLOR: Record<EstadoPedido, string> = {
-  pendiente:  '#D1D5DB',
-  entregado:  '#10B981',
-  rechazado:  '#EF4444',
-  postergado: '#F59E0B',
+  pendiente:       '#D1D5DB',
+  entregado:       '#10B981',
+  rechazado:       '#EF4444',
+  postergado:      '#F59E0B',
+  no_entregado:    '#EF4444',
+  entrega_parcial: '#F59E0B',
 };
 
 const ESTADO_LABEL: Record<string, string> = {
-  entregado:  'Entregado',
-  rechazado:  'Rechazado',
-  postergado: 'Postergado',
+  entregado:       'Entregado',
+  rechazado:       'Rechazado',
+  postergado:      'Postergado',
+  no_entregado:    'No Entregado',
+  entrega_parcial: 'Entrega parcial',
 };
 
 // ─── Datos mock ───────────────────────────────────────────────────────────────
@@ -221,7 +225,10 @@ export default function EntregasScreen({ navigation, route }: Props) {
     setPendientes(prev => {
       const pedido = prev.find(p => p.key === pg.key);
       if (!pedido) return prev;
-      setFinalizados(fin => [...fin, { ...pedido, estado: pg.nuevoEstado }]);
+      setFinalizados(fin => [
+        { ...pedido, estado: pg.nuevoEstado, subestado: pg.subestado, evidencias: pg.evidencias },
+        ...fin,
+      ]);
       setTabActiva('enruta');
       return prev.filter(p => p.key !== pg.key);
     });
