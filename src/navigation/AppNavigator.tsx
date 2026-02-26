@@ -12,7 +12,6 @@ import ConfiguracionScreen from '../screens/ConfiguracionScreen';
 import EntregasScreen from '../screens/EntregasScreen';
 import PedidoScreen from '../screens/PedidoScreen';
 import FormularioEntregaScreen from '../screens/FormularioEntregaScreen';
-import BulkGestionScreen from '../screens/BulkGestionScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -76,11 +75,6 @@ export default function AppNavigator() {
         <Stack.Screen
           name="FormularioEntrega"
           component={FormularioEntregaScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="BulkGestion"
-          component={BulkGestionScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

@@ -235,50 +235,6 @@ export default function EntregasScreen({ navigation, route }: Props) {
   }, [route.params?.pedidoGestionado]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // ── Bulk ──────────────────────────────────────────────────────────────────────
-  const [bulkMode, setBulkMode] = useState(false);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-
-  const toggleSelection = (key: string) => {
-    setSelectedKeys(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-
-  const handleBulkButton = () => {
-    if (!bulkMode) {
-      setBulkMode(true);
-      setSelectedKeys(new Set());
-    } else if (selectedKeys.size === 0) {
-      setBulkMode(false);
-    } else {
-      const pedidosSeleccionados = pendientes.filter(p => selectedKeys.has(p.key));
-      navigation.navigate('BulkGestion', { pedidos: pedidosSeleccionados });
-      setBulkMode(false);
-      setSelectedKeys(new Set());
-    }
-  };
-
-  // Procesar resultado bulk cuando volvemos desde BulkGestionScreen
-  useEffect(() => {
-    const pbg = route.params?.pedidosBulkGestionados;
-    if (!pbg) return;
-    setPendientes(prev => {
-      const keySet = new Set(pbg.keys);
-      const gestionados = prev.filter(p => keySet.has(p.key));
-      setFinalizados(fin => [
-        ...gestionados.map(p => ({ ...p, estado: pbg.nuevoEstado, subestado: pbg.subestado, evidencias: pbg.evidencias })),
-        ...fin,
-      ]);
-      setTabActiva('enruta');
-      return prev.filter(p => !keySet.has(p.key));
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.params?.pedidosBulkGestionados]);
-
   // ── Búsqueda ─────────────────────────────────────────────────────────────────
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -450,44 +406,8 @@ export default function EntregasScreen({ navigation, route }: Props) {
           >
             <Ionicons name="map-outline" size={22} color={colors.text} />
           </TouchableOpacity>
-
-          {/* Gestión masiva (solo En Ruta) */}
-          {tabActiva === 'enruta' && (
-            <TouchableOpacity
-              onPress={handleBulkButton}
-              style={{ minWidth: 40, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
-            >
-              <Ionicons
-                name={
-                  !bulkMode ? 'layers-outline' :
-                  selectedKeys.size === 0 ? 'close-outline' :
-                  'arrow-forward-circle'
-                }
-                size={22}
-                color={bulkMode && selectedKeys.size > 0 ? colors.warning : colors.text}
-              />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
-
-      {/* ── Banner modo bulk ────────────────────────────────────────────────── */}
-      {bulkMode && (
-        <View style={{
-          backgroundColor: '#1F2937',
-          paddingHorizontal: 16,
-          paddingVertical: 7,
-          flexDirection: 'row',
-          alignItems: 'center',
-        }}>
-          <Ionicons name="checkbox-outline" size={14} color="rgba(255,255,255,0.6)" style={{ marginRight: 6 }} />
-          <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-            {selectedKeys.size === 0
-              ? 'Selecciona pedidos de la lista'
-              : `${selectedKeys.size} pedido${selectedKeys.size !== 1 ? 's' : ''} seleccionado${selectedKeys.size !== 1 ? 's' : ''} · toca la flecha para gestionar`}
-          </Text>
-        </View>
-      )}
 
       {/* ── Barra de búsqueda ───────────────────────────────────────────────── */}
       {searchVisible && (
@@ -550,12 +470,12 @@ export default function EntregasScreen({ navigation, route }: Props) {
           const isActive = tabActiva === 'enruta' && activeIndex === index;
           const isHover  = tabActiva === 'enruta' && hoverIndex === index && !isActive;
           const leftColor = ESTADO_COLOR[item.estado];
-          const isSelected = selectedKeys.has(item.key);
 
-          const innerContent = (
+          return (
+            <SwipeableItem key={item.key} onSwipeRight={() => openMapForPedido(item)}>
             <Animated.View
               style={{
-                backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                backgroundColor: '#FFFFFF',
                 flexDirection: 'row',
                 alignItems: 'center',
                 borderLeftWidth: 5,
@@ -570,34 +490,14 @@ export default function EntregasScreen({ navigation, route }: Props) {
                 transform: isActive ? [{ translateY: dragY }] : [],
               }}
             >
-              {/* Checkbox (solo modo bulk, solo En Ruta) */}
-              {bulkMode && tabActiva === 'enruta' && (
-                <TouchableOpacity
-                  onPress={() => toggleSelection(item.key)}
-                  style={{ width: 44, justifyContent: 'center', alignItems: 'center' }}
-                >
-                  <Ionicons
-                    name={isSelected ? 'checkbox' : 'square-outline'}
-                    size={22}
-                    color={isSelected ? colors.primary : '#9CA3AF'}
-                  />
-                </TouchableOpacity>
-              )}
-
               {/* Contenido */}
               <TouchableOpacity
-                style={{ flex: 1, paddingVertical: 12, paddingLeft: bulkMode ? 4 : 12, paddingRight: 4 }}
-                onPress={() => {
-                  if (bulkMode && tabActiva === 'enruta') {
-                    toggleSelection(item.key);
-                  } else {
-                    navigation.navigate('Pedido', {
-                      pedido: item,
-                      formularioCompletado: tabActiva === 'finalizados' ? true : undefined,
-                      modoEdicion: tabActiva === 'finalizados' ? true : undefined,
-                    });
-                  }
-                }}
+                style={{ flex: 1, paddingVertical: 12, paddingLeft: 12, paddingRight: 4 }}
+                onPress={() => navigation.navigate('Pedido', {
+                  pedido: item,
+                  formularioCompletado: tabActiva === 'finalizados' ? true : undefined,
+                  modoEdicion: tabActiva === 'finalizados' ? true : undefined,
+                })}
                 activeOpacity={0.7}
               >
 
@@ -643,8 +543,8 @@ export default function EntregasScreen({ navigation, route }: Props) {
                 )}
               </TouchableOpacity>
 
-              {/* Handle de arrastre (solo pendientes, fuera de modo bulk) */}
-              {item.estado === 'pendiente' && !bulkMode && (
+              {/* Handle de arrastre (solo pendientes) */}
+              {item.estado === 'pendiente' && (
                 <DragHandle
                   index={index}
                   isActive={isActive}
@@ -654,15 +554,6 @@ export default function EntregasScreen({ navigation, route }: Props) {
                 />
               )}
             </Animated.View>
-          );
-
-          return bulkMode && tabActiva === 'enruta' ? (
-            <View key={item.key} style={{ overflow: 'hidden', marginBottom: 1 }}>
-              {innerContent}
-            </View>
-          ) : (
-            <SwipeableItem key={item.key} onSwipeRight={() => openMapForPedido(item)}>
-              {innerContent}
             </SwipeableItem>
           );
         })}
@@ -683,7 +574,7 @@ export default function EntregasScreen({ navigation, route }: Props) {
         paddingBottom: insets.bottom || 8,
       }}>
         <TouchableOpacity
-          onPress={() => { setTabActiva('enruta'); }}
+          onPress={() => setTabActiva('enruta')}
           style={{ flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons
@@ -702,7 +593,7 @@ export default function EntregasScreen({ navigation, route }: Props) {
         <View style={{ width: 1, backgroundColor: '#374151', marginVertical: 8 }} />
 
         <TouchableOpacity
-          onPress={() => { setTabActiva('finalizados'); setBulkMode(false); setSelectedKeys(new Set()); }}
+          onPress={() => setTabActiva('finalizados')}
           style={{ flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons
