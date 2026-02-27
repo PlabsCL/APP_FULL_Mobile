@@ -49,11 +49,7 @@ const ESTADO_LABEL: Record<string, string> = {
 };
 
 // ─── Datos mock ───────────────────────────────────────────────────────────────
-const INIT_FINALIZADOS: PedidoConEstado[] = [
-  { key: 'f1', codigo: 'PR24', cliente: 'MARIA TERESA CACERES GONZALEZ', direccion: 'LOS CIPRESES 3422, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'entregado',  sincronizado: true,  lat: -33.6089, lng: -70.5742 },
-  { key: 'f2', codigo: 'PR30', cliente: 'DANIEL ANTONIO MOYA ALVARADO',  direccion: 'EL TAMARINDO 2505, PUENTE ALTO',     horario: '08:00 - 21:00', estado: 'rechazado',  sincronizado: true,  lat: -33.6073, lng: -70.5789 },
-  { key: 'f3', codigo: 'PR29', cliente: 'GLORIA ANDREA GAETE CERDA',     direccion: 'PASAJE EL BALCON 3332, PUENTE ALTO', horario: '08:00 - 21:00', estado: 'postergado', sincronizado: false, lat: -33.6102, lng: -70.5701 },
-];
+const INIT_FINALIZADOS: PedidoConEstado[] = [];
 
 const INIT_PENDIENTES: PedidoConEstado[] = [
   { key: 'p4',  codigo: 'PR25', cliente: 'HERNAN DAVID SOTO SARAVIA',            direccion: 'PASAJE JORGE ORREGO SALAS 742, PUENTE ALTO', horario: '08:00 - 21:00', estado: 'pendiente', sincronizado: true,  lat: -33.6135, lng: -70.5768 },
@@ -217,7 +213,20 @@ function SyncIndicator({ synced }: { synced: boolean }) {
 export default function EntregasScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const [tabActiva, setTabActiva] = useState<'enruta' | 'finalizados'>('enruta');
-  const [pendientes, setPendientes] = useState<PedidoConEstado[]>(INIT_PENDIENTES);
+  const [pendientes, setPendientes] = useState<PedidoConEstado[]>(() => {
+    // Si vienen pedidos ya ordenados desde RutaScreen, usarlos directamente
+    const pedidosOrdenados = route.params?.pedidosOrdenados;
+    if (pedidosOrdenados && pedidosOrdenados.length > 0) return pedidosOrdenados;
+    // Fallback: INIT_PENDIENTES ordenados por códigos recibidos
+    const orden = route.params?.ordenPedidos;
+    if (!orden || orden.length === 0) return INIT_PENDIENTES;
+    const indexMap = new Map(orden.map((codigo, i) => [codigo, i]));
+    return [...INIT_PENDIENTES].sort((a, b) => {
+      const ia = indexMap.get(a.codigo) ?? 999;
+      const ib = indexMap.get(b.codigo) ?? 999;
+      return ia - ib;
+    });
+  });
   const [finalizados, setFinalizados] = useState<PedidoConEstado[]>(INIT_FINALIZADOS);
 
   // Procesar pedido confirmado cuando se navega de vuelta desde PedidoScreen

@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import * as Location from 'expo-location';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -92,6 +94,41 @@ function ActionRow({ label, description, onPress }: { label: string; description
   );
 }
 
+// ─── Fila con input de texto ──────────────────────────────────────────────────
+function InputRow({
+  label, description, value, onChangeText, placeholder,
+}: { label: string; description?: string; value: string; onChangeText: (t: string) => void; placeholder?: string }) {
+  return (
+    <View style={{
+      paddingHorizontal: 16, paddingVertical: 14,
+      borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
+      backgroundColor: '#FFFFFF',
+    }}>
+      <Text style={{ fontSize: 15, color: '#1F2937', fontWeight: '500' }}>{label}</Text>
+      {description && (
+        <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{description}</Text>
+      )}
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        style={{
+          marginTop: 8,
+          backgroundColor: '#F3F4F6',
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          borderRadius: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          fontSize: 14,
+          color: '#1F2937',
+        }}
+      />
+    </View>
+  );
+}
+
 // ─── Encabezado de sección ────────────────────────────────────────────────────
 function SectionHeader({ title }: { title: string }) {
   return (
@@ -117,11 +154,49 @@ export default function ConfiguracionScreen({ navigation }: Props) {
     notificarDespachos: true,
   });
 
+  const [direccionInicio, setDireccionInicio] = useState('');
+
   useEffect(() => {
     SecureStore.getItemAsync('usarWaze').then(val => {
       if (val !== null) setSettings(prev => ({ ...prev, usarWaze: val === 'true' }));
     });
+    SecureStore.getItemAsync('direccionInicio').then(val => {
+      if (val !== null) setDireccionInicio(val);
+    });
+    SecureStore.getItemAsync('inicioLat').then(val => {
+      if (val !== null) setGeocodeStatus('ok');
+    });
   }, []);
+
+  const [geocodeStatus, setGeocodeStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const geocodificar = async (direccion: string) => {
+    if (!direccion.trim()) {
+      setGeocodeStatus('idle');
+      return;
+    }
+    setGeocodeStatus('loading');
+    try {
+      const results = await Location.geocodeAsync(direccion);
+      if (results.length > 0) {
+        await SecureStore.setItemAsync('inicioLat', String(results[0].latitude));
+        await SecureStore.setItemAsync('inicioLng', String(results[0].longitude));
+        setGeocodeStatus('ok');
+      } else {
+        setGeocodeStatus('error');
+      }
+    } catch {
+      setGeocodeStatus('error');
+    }
+  };
+
+  const handleDireccionChange = (text: string) => {
+    setDireccionInicio(text);
+    SecureStore.setItemAsync('direccionInicio', text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => geocodificar(text), 1200);
+  };
 
   const toggle = (key: keyof typeof settings) => {
     setSettings(prev => {
@@ -196,6 +271,36 @@ export default function ConfiguracionScreen({ navigation }: Props) {
           value={settings.escanearAutomatico}
           onToggle={() => toggle('escanearAutomatico')}
         />
+
+        {/* Inicio de ruta */}
+        <SectionHeader title="Inicio de ruta" />
+        <InputRow
+          label="Dirección de salida"
+          description="Desde donde parte el transportista para optimizar la ruta"
+          value={direccionInicio}
+          onChangeText={handleDireccionChange}
+          placeholder="Ej: Av. Concha y Toro 100, Puente Alto"
+        />
+        {geocodeStatus !== 'idle' && (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 6,
+            paddingHorizontal: 16, paddingVertical: 8,
+            backgroundColor: '#FFFFFF',
+            borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
+          }}>
+            <Ionicons
+              name={geocodeStatus === 'loading' ? 'hourglass-outline' : geocodeStatus === 'ok' ? 'checkmark-circle' : 'alert-circle'}
+              size={16}
+              color={geocodeStatus === 'loading' ? '#6B7280' : geocodeStatus === 'ok' ? '#10B981' : '#EF4444'}
+            />
+            <Text style={{
+              fontSize: 12,
+              color: geocodeStatus === 'loading' ? '#6B7280' : geocodeStatus === 'ok' ? '#10B981' : '#EF4444',
+            }}>
+              {geocodeStatus === 'loading' ? 'Buscando coordenadas…' : geocodeStatus === 'ok' ? 'Ubicación encontrada' : 'No se encontró la dirección'}
+            </Text>
+          </View>
+        )}
 
         {/* Actualización */}
         <SectionHeader title="Actualización" />

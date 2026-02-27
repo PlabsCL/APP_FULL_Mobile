@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation, route }: HomeScreenProps) {
 
         {/* Botón Rutas */}
         <TouchableOpacity
-          onPress={() => navigation.navigate('RutasDisponibles')}
+          onPress={() => navigation.navigate('RutasDisponibles', { sinRutas: rutaFinalizada })}
           style={{ width: '100%', minHeight: 56, backgroundColor: colors.primary, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
         >
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>

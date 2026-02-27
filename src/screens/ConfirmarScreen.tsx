@@ -19,7 +19,8 @@ interface Props {
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 export default function ConfirmarScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const { ruta, totalGuias } = route.params;
+  const { ruta, totalGuias, escaneados, ordenPedidos, pedidosOrdenados } = route.params;
+  const noEscaneados = totalGuias - escaneados;
 
   const horaActual = new Date().toLocaleTimeString('es-CL', {
     hour: '2-digit',
@@ -27,10 +28,12 @@ export default function ConfirmarScreen({ navigation, route }: Props) {
     hour12: false,
   });
 
-  const filas = [
+  const filas: { label: string; valor: string; color?: string }[] = [
     { label: 'Fecha de Ruta',               valor: ruta.fecha },
     { label: 'Vehículo',                     valor: ruta.codigo },
     { label: 'Guías totales',                valor: String(totalGuias) },
+    { label: 'Guías escaneadas',             valor: String(escaneados), color: '#10B981' },
+    { label: 'Guías no escaneadas',          valor: String(noEscaneados), color: noEscaneados > 0 ? '#F59E0B' : '#10B981' },
     { label: 'Guías no georreferenciadas',   valor: '0' },
     { label: 'Hora de Inicio',               valor: horaActual },
   ];
@@ -97,7 +100,7 @@ export default function ConfirmarScreen({ navigation, route }: Props) {
             <Text style={{ fontSize: 14, color: '#374151', flex: 1, marginRight: 12 }}>
               {fila.label}
             </Text>
-            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1F2937' }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', color: fila.color || '#1F2937' }}>
               {fila.valor}
             </Text>
           </View>
@@ -114,7 +117,7 @@ export default function ConfirmarScreen({ navigation, route }: Props) {
         {/* Botón principal */}
         <TouchableOpacity
           onPress={() => {
-            navigation.navigate('Entregas', { ruta, totalGuias });
+            navigation.navigate('Entregas', { ruta, totalGuias, ordenPedidos, pedidosOrdenados });
           }}
           style={{
             backgroundColor: colors.warning,

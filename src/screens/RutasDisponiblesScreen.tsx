@@ -17,12 +17,12 @@ import { Ionicons } from '@expo/vector-icons';
 // ─── Tipos de navegación ──────────────────────────────────────────────────────
 export type RootStackParamList = {
   Home: { rutaFinalizada?: boolean } | undefined;
-  RutasDisponibles: undefined;
+  RutasDisponibles: { sinRutas?: boolean } | undefined;
   Vehiculos: { ruta: Ruta };
   Ruta: { ruta: Ruta };
-  Confirmar: { ruta: Ruta; totalGuias: number };
+  Confirmar: { ruta: Ruta; totalGuias: number; escaneados: number; ordenPedidos: string[]; pedidosOrdenados: import('../types/pedido').PedidoConEstado[] };
   Configuracion: undefined;
-  Entregas: { ruta?: Ruta; totalGuias?: number; pedidoGestionado?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; subestado?: string | null; evidencias?: import('../types/pedido').EvidenciasFormulario }; pedidosGestionadosBulk?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; evidencias?: import('../types/pedido').EvidenciasFormulario }[] };
+  Entregas: { ruta?: Ruta; totalGuias?: number; ordenPedidos?: string[]; pedidosOrdenados?: import('../types/pedido').PedidoConEstado[]; pedidoGestionado?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; subestado?: string | null; evidencias?: import('../types/pedido').EvidenciasFormulario }; pedidosGestionadosBulk?: { key: string; nuevoEstado: import('../types/pedido').EstadoPedido; evidencias?: import('../types/pedido').EvidenciasFormulario }[] };
   Pedido: { pedido: PedidoConEstado; formularioCompletado?: boolean; estadoRetorno?: import('../types/pedido').EstadoPedido; subestadoRetorno?: string | null; modoEdicion?: boolean; evidenciasRetorno?: import('../types/pedido').EvidenciasFormulario };
   FormularioEntrega: { estado: import('../types/pedido').EstadoPedido; subestado?: string | null; pedidoCodigo: string; pedido: PedidoConEstado; evidenciasIniciales?: import('../types/pedido').EvidenciasFormulario };
   BulkEntrega: { pedidos: PedidoConEstado[]; formularioCompletado?: boolean; estadoRetorno?: import('../types/pedido').EstadoPedido; subestadoRetorno?: string | null; evidenciasRetorno?: import('../types/pedido').EvidenciasFormulario };
@@ -31,6 +31,7 @@ export type RootStackParamList = {
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'RutasDisponibles'>;
+  route: import('@react-navigation/native').RouteProp<RootStackParamList, 'RutasDisponibles'>;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -58,23 +59,15 @@ const MOCK_RUTAS: Ruta[] = [
     horaInicio: '09:00-AM',
     fecha: formatDate(new Date()),
   },
-  {
-    id: '42760198',
-    codigo: 'ORTE-01',
-    nombre: 'ORTE-01',
-    destino: 'Maipú',
-    cantidadParadas: 8,
-    horaInicio: '11:00-AM',
-    fecha: formatDate(new Date()),
-  },
 ];
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
-export default function RutasDisponiblesScreen({ navigation }: Props) {
+export default function RutasDisponiblesScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const sinRutas = route?.params?.sinRutas === true;
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [rutas, setRutas] = useState<Ruta[]>(MOCK_RUTAS);
-  const [selectedRuta, setSelectedRuta] = useState<Ruta | null>(MOCK_RUTAS[0]);
+  const [rutas, setRutas] = useState<Ruta[]>(sinRutas ? [] : MOCK_RUTAS);
+  const [selectedRuta, setSelectedRuta] = useState<Ruta | null>(sinRutas ? null : MOCK_RUTAS[0]);
   const [loading, setLoading] = useState(false);
 
   const hoy = formatDate(new Date());
